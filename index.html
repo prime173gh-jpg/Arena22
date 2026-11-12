@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ساحة المعركة - 2D</title>
+<title>ساحة المعركة - Anime 2D</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#090c26">
 <style>
@@ -19,7 +19,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 .b.rdy{border-color:#ffd166;box-shadow:0 0 14px #ffd166}
 .b i{position:absolute;inset:0;background:rgba(5,8,30,.75);transform-origin:bottom;transform:scaleY(0)}
 .b span{position:relative}
-#ov{position:absolute;inset:0;background:rgba(6,9,30,.93);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;z-index:10}
+#ov{position:absolute;inset:0;background:rgba(6,9,30,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;z-index:10}
 #ov h1{margin:0;font-size:28px;color:#4fc3ff}
 #ov p{margin:0;max-width:330px;line-height:1.6;color:#b9c6ff;font-size:14px}
 @media (orientation:landscape) and (max-height:540px){#btns{grid-template-columns:repeat(3,52px);gap:5px;bottom:8px;right:8px}.b{height:52px;font-size:10px}.b.w{border-radius:26px}#pad{top:12%;width:40%}#ov h1{font-size:22px}#ov{gap:8px;padding:12px}#bx button{padding:9px 24px;font-size:15px}}
@@ -39,7 +39,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 <div id="btns"></div>
 <div id="ov"><h1 id="t"></h1><p id="m"></p><div id="df"></div><textarea id="ta" style="display:none"></textarea><div id="bx"></div></div>
 <script>
-/* ===== الشخصيات والمهارات (تم إضافة كاشيمو) ===== */
+/* ===== الشخصيات بمهارات خاصة وحصرية لكل شخصية ===== */
 const CH={
  gojo:{n:'جوجو',style:'gojo',hp:1500,col:'#4fc3ff',sp:190,rng:230,
   sk:[{n:'أزرق',t:'pull',cd:7,dur:1.6,tick:.125,dmg:18},
@@ -51,11 +51,11 @@ const CH={
       {n:'تقطيع',t:'cleave',cd:4,dmg:75,r:90},
       {n:'سهم النار',t:'orb',cd:7,dmg:95,ex:95,v:410,bn:0,col:'#ff9a3c',u:{dmg:190,ex:175}}],
   dom:{n:'المزار الشرير',type:'shrine',tick:.25,dmg:28,dur:7}},
- kashimo:{n:'كاشيمو',style:'kashimo',hp:1450,col:'#ffe14a',sp:195,rng:160,
-  sk:[{n:'صاعقة',t:'slash',cd:2.5,dmg:35,cnt:3,v:640,col:'#ffe14a'},
-      {n:'برق مدمر',t:'cleave',cd:4,dmg:80,r:95},
-      {n:'كورة صاعقة',t:'orb',cd:7,dmg:90,ex:95,v:400,bn:0,col:'#ffe14a',u:{dmg:180,ex:175}}],
-  dom:{n:'حقل البرق المطلق',type:'lightning',tick:.3,dmg:30,dur:7}}
+ kashimo:{n:'كاشيمو',style:'kashimo',hp:1450,col:'#3b82f6',sp:200,rng:160,
+  sk:[{n:'صاعقة برق',t:'slash',cd:2.3,dmg:38,cnt:4,v:680,col:'#60a5fa'},
+      {n:'ش, صدمة رعدية',t:'cleave',cd:3.8,dmg:85,r:95},
+      {n:'برق متسلسل',t:'orb',cd:6.5,dmg:95,ex:95,v:430,bn:1,col:'#9333ea',u:{dmg:190,ex:185}}],
+  dom:{n:'حقل التفريغ الكهربائي',type:'lightning',tick:.25,dmg:32,dur:7}}
 };
 
 const DOMCH=200,ULTCH=300,ULT=10,CLASH=30,CAST=2.2,A=300;
@@ -99,7 +99,7 @@ function ui(t,m,btns,ta,showDiff=false){
   btns.forEach(([l,f,c])=>{const b=document.createElement('button');b.textContent=l;if(c)b.className=c;b.onclick=f;bx.append(b)})
 }
 
-function menu(){G=null;ui('ساحة القتال - 2D','اختر مستوى الصعوبة وشخصيتك وابدأ المعركة!',
+function menu(){G=null;ui('ساحة القتال - Anime 2D','اختر مستوى الصعوبة وشخصيتك وابدأ المعركة!',
   Object.keys(CH).map(k=>['العب بـ '+CH[k].n,()=>start(k)]).concat([['شخصياتي: إضافة وتعديل',editor,'s']]),undefined,true)}
 
 const TPL={id:'custom_ch',n:'شخصية جديدة',style:'default',hp:1400,col:'#4fff91',sp:190,rng:150,sk:[{n:'مهارة 1',t:'slash',cd:2.5,dmg:35,cnt:3,v:600},{n:'مهارة 2',t:'cleave',cd:4,dmg:80,r:90},{n:'مهارة 3',t:'orb',cd:7,dmg:90,ex:95,v:390}],dom:{n:'مجال خاص',type:'shrine',tick:.3,dmg:30,dur:7}};
@@ -358,11 +358,11 @@ function drawStickman(e){
     g.beginPath();g.moveTo(-6*sc,headY-4*sc);g.lineTo(-8*sc,headY-11*sc);g.lineTo(0,headY-13*sc);g.lineTo(8*sc,headY-11*sc);g.lineTo(6*sc,headY-4*sc);g.stroke();
     g.fillStyle='#ff002b';g.fillRect(f>0?2*sc:-5*sc,headY-1*sc,3*sc,2*sc);
   }else if(c.style==='kashimo'){
-    // شعر كاشيمو الأصفر الشائك المميز
-    g.strokeStyle='#fff6cc';g.lineWidth=2.2*sc;
+    // شعر كاشيمو الأزرق المائل للبنفسجي الشائك
+    g.strokeStyle='#93c5fd';g.lineWidth=2.2*sc;
     g.beginPath();g.moveTo(-7*sc,headY-4*sc);g.lineTo(-10*sc,headY-13*sc);g.lineTo(-3*sc,headY-8*sc);
     g.lineTo(2*sc,headY-15*sc);g.lineTo(7*sc,headY-8*sc);g.lineTo(10*sc,headY-13*sc);g.lineTo(7*sc,headY-4*sc);g.stroke();
-    g.fillStyle='#0044ff';g.fillRect(f>0?1*sc:-4*sc,headY-1*sc,3*sc,2*sc);
+    g.fillStyle='#38bdf8';g.fillRect(f>0?1*sc:-4*sc,headY-1*sc,3*sc,2*sc);
   }
 
   g.strokeStyle=bodyCol;g.lineWidth=3.8*sc;
@@ -402,7 +402,7 @@ function draw(t){const dt=Math.min(.033,(t-lt)/1000||0);lt=t;step(dt);
       const c=CH[e.k];
       g.save();
       g.beginPath();g.arc(X(0),Y(0),A*S,0,7);g.clip();
-      g.fillStyle=c.dom.type==='freeze'?'rgba(10, 15, 55, 0.72)':(c.dom.type==='lightning'?'rgba(30, 25, 5, 0.75)':'rgba(65, 8, 18, 0.65)');
+      g.fillStyle=c.dom.type==='freeze'?'rgba(10, 15, 55, 0.72)':(c.dom.type==='lightning'?'rgba(15, 23, 42, 0.78)':'rgba(65, 8, 18, 0.65)');
       g.fillRect(X(-A),Y(-A),A*2*S,A*2*S);
       if(c.dom.type==='freeze'){
         g.fillStyle='#ffffff';
@@ -411,11 +411,11 @@ function draw(t){const dt=Math.min(.033,(t-lt)/1000||0);lt=t;step(dt);
           g.beginPath();g.arc(X(Math.cos(ang)*st.r),Y(Math.sin(ang)*st.r),st.s*S,0,7);g.fill();
         });
       }else if(c.dom.type==='lightning'){
-        // تأثير صواعق متطايرة في مجال كاشيمو
-        g.strokeStyle='#ffe14a';g.lineWidth=2.5;
-        for(let k=0;k<5;k++){
+        // صواعق مجال كاشيمو الزرقاء البنفسجية
+        g.strokeStyle='#60a5fa';g.lineWidth=3;g.shadowColor='#9333ea';g.shadowBlur=15;
+        for(let k=0;k<6;k++){
           const lx=X((Math.random()-.5)*A*1.5), ly=Y((Math.random()-.5)*A*1.5);
-          g.beginPath();g.moveTo(lx,ly);g.lineTo(lx+(Math.random()-.5)*60,ly+(Math.random()-.5)*60);g.stroke();
+          g.beginPath();g.moveTo(lx,ly);g.lineTo(lx+(Math.random()-.5)*70,ly+(Math.random()-.5)*70);g.stroke();
         }
       }else{
         g.strokeStyle='rgba(255, 77, 94, 0.25)';g.lineWidth=3;
@@ -445,12 +445,11 @@ function draw(t){const dt=Math.min(.033,(t-lt)/1000||0);lt=t;step(dt);
         }
         g.restore();
       }else if(f.k==='lt'){
-        // رسم تأثير البرق والصاعقة
-        g.save();g.strokeStyle='#ffe14a';g.lineWidth=4;g.shadowColor='#ffe14a';g.shadowBlur=12;
+        g.save();g.strokeStyle='#60a5fa';g.lineWidth=4.5;g.shadowColor='#9333ea';g.shadowBlur=16;
         g.beginPath();
         let lx=X(f.x), ly=Y(f.y)-40*S;
         g.moveTo(lx,ly);
-        for(let l=0;l<4;l++){lx+=(Math.random()-.5)*25;ly+=15*S;g.lineTo(lx,ly);}
+        for(let l=0;l<4;l++){lx+=(Math.random()-.5)*28;ly+=16*S;g.lineTo(lx,ly);}
         g.stroke();g.restore();
       }else{g.lineWidth=16*S;g.beginPath();g.moveTo(X(f.x1),Y(f.y1));g.lineTo(X(f.x2),Y(f.y2));g.stroke()}
       g.globalAlpha=1});
