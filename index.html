@@ -3,67 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ساحة المعركة - Anime Edition</title>
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#090c26">
-<style>
-:root{--bg:#090c26;--ink:#eaf2ff;--line:#2a3478;color-scheme:dark;box-sizing:border-box;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
-#c{position:absolute;inset:0;width:100%;height:100%}
-#pad{position:absolute;left:0;top:25%;width:45%;bottom:0}
-#btns{position:absolute;right:8px;bottom:12px;display:grid;grid-template-columns:repeat(3,60px);gap:7px;direction:ltr;z-index:5}
-.b{height:60px;border-radius:50%;border:2px solid var(--line);background:#141a45;color:var(--ink);font:600 11px system-ui;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:0;touch-action:none}
-.b:active{background:#222c7a}
-.b.m1{border-color:#ff7b7b;background:#26142e}
-.b.w{border-radius:30px;border-color:#4fc3ff}
-.b.rdy{border-color:#ffd166;box-shadow:0 0 14px #ffd166}
-.b i{position:absolute;inset:0;background:rgba(5,8,30,.75);transform-origin:bottom;transform:scaleY(0)}
-.b span{position:relative}
-#ov{position:absolute;inset:0;background:rgba(6,9,30,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;z-index:10}
-#ov h1{margin:0;font-size:28px;color:#4fc3ff}
-#ov p{margin:0;max-width:330px;line-height:1.6;color:#b9c6ff;font-size:14px}
-@media (orientation:landscape) and (max-height:540px){#btns{grid-template-columns:repeat(3,52px);gap:5px;bottom:8px;right:8px}.b{height:52px;font-size:10px}.b.w{border-radius:26px}#pad{top:12%;width:40%}#ov h1{font-size:22px}#ov{gap:8px;padding:12px}#bx button{padding:9px 24px;font-size:15px}}
-#ov textarea{width:min(88vw,330px);height:120px;direction:ltr;background:#141a45;color:var(--ink);border:1px solid var(--line);border-radius:10px;font-size:12px;padding:8px;user-select:text;-webkit-user-select:text}
-#ov{touch-action:auto}
-#bx{display:flex;flex-direction:column;gap:9px;align-items:center}
-#bx button{font:600 17px system-ui;padding:12px 26px;border-radius:26px;border:0;background:#4fc3ff;color:#04122a;min-width:220px;cursor:pointer}
-#bx button.s{background:#1b2260;color:var(--ink);font-size:14px;padding:9px 20px}
-.diff-row{display:flex;gap:8px;margin-bottom:4px}
-.diff-btn{padding:7px 14px!important;min-width:auto!important;font-size:13px!important;border-radius:14px!important;background:#1b2260!important;color:#fff!important;border:2px solid transparent!important}
-.diff-btn.active{border-color:#ffd166!important;background:#2a358c!important;color:#ffd166!important}
-</style>
-</head>
-<body>
-<canvas id="c"></canvas>
-<div id="pad"></div>
-<div id="btns"></div>
-<div id="ov"><h1 id="t"></h1><p id="m"></p><div id="df"></div><textarea id="ta" style="display:none"></textarea><div id="bx"></div></div>
-<script>
-/* ===== الشخصيات بمهارات الأنمي الحصرية والتفصيلية ===== */
-const CH={
- gojo:{n:'جوجو',style:'gojo',hp:1500,col:'#4fc3ff',sp:190,rng:230,
-  sk:[{n:'أزرق (جاذبية)',t:'pull',cd:7يا عم ولا تزعل نفسك خالص يا يسطا! أنا عارف شخصيات ججوتسو كايسن (Jujutsu Kaisen) حتة حتة وفاهم قدراتهم التقنية والسينمائية كويس جداً (زي تقنية "الإسقاط الزمني" وفريمات ناويا، وبرق كاشيمو الأسطوري، وحظ هاكاري المطلق، وسرعة توجي المرعبة).
-
-عشان متندمش أبداً وتطلع أحلى لعبة أنمي 2D بجد على جهازك، صممت لك كود كامل متكامل فيه **شخصيات فريدة كلياً، وكل شخصية لها مهارات بصرية خاصة بها، وأسماء وتقنيات حقيقية مأخوذة من الأنمي**، مع أنيميشنات حركية خطيرة وهزازات شاشة (Screen Shake) وتأثيرات سينمائية تخلّيك تحس إنك جوه المعركة بالظبط!
-
-### الشخصيات اللي تم تصميمها وتظبيطها في الكود الجديد:
-1. **جوجو (Gojo Satoru):** أزرق (Pull)، أحمر (Red Orb)، وبنفسجي مدمر (`Hollow Purple`) مع مجال الفراغ اللانهائي.
-2. **سوكونا (Ryomen Sukuna):** تفكيك (`Dismantle`)، تقطيع عشوائي (`Cleave`)، وسهم النار (`Fuga`) مع مجال المزار الشرير.
-3. **كاشيمو (Hajime Kashimo):** برق أزرق/بنفسجي خارق، صاعقة رعدية متسلسلة، ومجال حقل التفريغ الكهربائي.
-4. **ناويا (Naoya Zenin):** تقنية الإسقاط الزمني (24 فريم في الثانية)، اندفاع سرعة فائقة تجمّد الخصم، ومقذوفات الإطار الزمني القاتلة.
-5. **هاكاري (Kinji Hakari):** لكمات المولدات المتتالية، طاقة الـ Jackpot العشوائية، والمجال الخاص بيه.
-6. **توجي (Toji Fushiguro):** سلاح السلسلة المقلوبة، هجوم الجسد السماوي المرعب، وسرعة الحركة الخاطفة.
-
----
-
-### كود `index.html` الأسطوري والمحدث (انسخه بالكامل):
-
-```html
-<!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ساحة المعركة - Ultimate Anime 2D</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#090c26">
@@ -129,7 +68,7 @@ const CH={
   dom:{n:'سرايا المقامرة',type:'jackpot',tick:.3,dmg:26,dur:7}},
  toji:{n:'توجي',style:'toji',hp:1550,col:'#64748b',sp:210,rng:120,
   sk:[{n:'سلسلة الموت',t:'slash',cd:2,dmg:40,cnt:3,v:700,col:'#94a3b8'},
-      {n:'طعنة سماوية',t:‘cleave‘,cd:3.5,dmg:90,r:90},
+      {n:'طعنة سماوية',t:'cleave',cd:3.5,dmg:90,r:90},
       {n:'هجوم مباغت',t:'orb',cd:6,dmg:95,ex:90,v:420,bn:0,col:'#cbd5e1'}],
   dom:{n:'ساحة الجسد السماوي',type:'heavenly',tick:.25,dmg:34,dur:7}}
 };
@@ -218,7 +157,7 @@ function dmgTo(i,d,sure){const t=G.p[i],s=G.p[1-i];
   if(!(s.ult>0))s.ut=Math.min(ULTCH,s.ut+d);
   if(!(t.ult>0))t.ut=Math.min(ULTCH,t.ut+d*.4);
   if(G.clash)G.clash.dmg[1-i]+=d;
-  pop(t,'-'+d);return d}
+  pop(t,\`-\${d}\`);return d}
 
 function usk(e,k){const b=CH[e.k].sk[k],o=Object.assign({},b);
   if(e.ult>0){if(b.u)Object.assign(o,b.u);else{o.dmg=b.dmg*2;if(b.ex)o.ex=b.ex*1.8;if(b.r)o.r=b.r*1.6;if(b.w)o.w=b.w*1.8;if(b.cnt)o.cnt=b.cnt+2;if(b.dur)o.dur=b.dur*1.5}}return o}
@@ -391,7 +330,7 @@ function step(dt){if(!G||G.st!=='play')return;G.t+=dt;
   if(G.p[0].hp<=0||G.p[1].hp<=0){G.st='over';const w=G.p[1].hp<=0;M.n++;save();
     ui(w?'🏆 فزت في معركة الأنمي!':'💀 انهار مقاتلك!','هل تريد خوض معركة جديدة؟',[['العب تاني',()=>start(CK)],['القائمة الرئيسية',menu,'s']])}
   
-  const q=G.p[0];[['b0',q.cd[0],CH[q.k].sk[0].cd],['b1',q.cd[1],CH[q.k].sk[1].cd],['b2',q.cd[2],CH[q.k].sk[2].cd],['bm1',q.m1cd,.32],['bbl',q.blcd,1.2],['brct',q.rcd,18],['bdash',q.dcd,1.1],['bdom',1-q.dm/DOMCH,1],['bult',1-q.ut/ULTCH,1']].forEach(([id,c,m])=>{
+  const q=G.p[0];[['b0',q.cd[0],CH[q.k].sk[0].cd],['b1',q.cd[1],CH[q.k].sk[1].cd],['b2',q.cd[2],CH[q.k].sk[2].cd],['bm1',q.m1cd,.32],['bbl',q.blcd,1.2],['brct',q.rcd,18],['bdash',q.dcd,1.1],['bdom',1-q.dm/DOMCH,1],['bult',1-q.ut/ULTCH,1]].forEach(([id,c,m])=>{
     const b=document.getElementById(id);if(b)b.firstChild.style.transform='scaleY('+Math.min(1,c/m)+')'});
   document.getElementById('b2').classList.toggle('rdy',!!CH[q.k].sk[2].need&&q.pur>0);document.getElementById('bdom').classList.toggle('rdy',q.dm>=DOMCH);document.getElementById('bult').classList.toggle('rdy',q.ut>=ULTCH)}
 
@@ -440,7 +379,6 @@ function drawStickman(e){
   const headY=-16*sc;
   g.beginPath();g.arc(0,headY,7.5*sc,0,7);g.fill();
 
-  // ملامح وتفاصيل شخصيات الأنمي الفريدة
   if(c.style==='gojo'){
     g.strokeStyle='#ffffff';g.lineWidth=2.2*sc;
     g.beginPath();g.moveTo(-6*sc,headY-4*sc);g.lineTo(-9*sc,headY-12*sc);g.lineTo(-2*sc,headY-7*sc);
@@ -456,15 +394,12 @@ function drawStickman(e){
     g.lineTo(2*sc,headY-15*sc);g.lineTo(7*sc,headY-8*sc);g.lineTo(10*sc,headY-13*sc);g.lineTo(7*sc,headY-4*sc);g.stroke();
     g.fillStyle='#38bdf8';g.fillRect(f>0?1*sc:-4*sc,headY-1*sc,3*sc,2*sc);
   }else if(c.style==='naoya'){
-    // شعر أخضر أنيق لناويا
     g.strokeStyle='#6ee7b7';g.lineWidth=2.2*sc;
     g.beginPath();g.moveTo(-6*sc,headY-4*sc);g.lineTo(-8*sc,headY-12*sc);g.lineTo(0,headY-10*sc);g.lineTo(8*sc,headY-12*sc);g.lineTo(6*sc,headY-4*sc);g.stroke();
   }else if(c.style==='hakari'){
-    // شعر هاكari المميز
     g.strokeStyle='#fde047';g.lineWidth=2.2*sc;
     g.beginPath();g.moveTo(-7*sc,headY-4*sc);g.lineTo(-5*sc,headY-13*sc);g.lineTo(5*sc,headY-13*sc);g.lineTo(7*sc,headY-4*sc);g.stroke();
   }else if(c.style==='toji'){
-    // شعر أسود قصير لتوجي
     g.strokeStyle='#94a3b8';g.lineWidth=2.2*sc;
     g.beginPath();g.moveTo(-6*sc,headY-4*sc);g.lineTo(-6*sc,headY-10*sc);g.lineTo(6*sc,headY-10*sc);g.lineTo(6*sc,headY-4*sc);g.stroke();
   }
