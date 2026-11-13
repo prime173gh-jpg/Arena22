@@ -60,6 +60,14 @@ CH.gojo.bz={n:'خطوة اللانهاية',cd:11,hits:4,dmg:24,col:'#4fc3ff',fx
 CH.suk.bz={n:'تقطيع متتالي',cd:11,hits:4,dmg:30,col:'#ff4d5e',fx:'cut'};
 CH.kashimo.bz={n:'برق متتالي',cd:11,hits:4,dmg:26,col:'#60a5fa',fx:'bolt',stunEnd:.5};
 CH.naoya.bz={n:'اندفاع 24 إطار',cd:9,hits:3,dmg:30,col:'#7ee8c9',fx:'frame'};
+/* توجي: ملوش طاقة ملعونة ولا مجال ولا تقنية. مهاراته سلاح ومجهود جسدي بس */
+CH.toji={n:'توجي',style:'toji',hp:Math.round(1350*HP_MULT),col:'#c9d3e6',sp:205,rng:125,
+  sk:[{n:'قطع مزدوج',t:'slash',cd:2.2,dmg:30,cnt:2,v:640,col:'#e6edf8'},
+      {n:'ضربة الأرض',t:'cleave',cd:4,dmg:70,r:80},
+      {n:'رمية الكاتانا',t:'orb',cd:6,dmg:80,ex:70,v:420,bn:0,col:'#c9d3e6',u:{dmg:150,ex:120}}],
+  dom:{n:'ضربة الكاتانا',type:'none',tick:1,dmg:0,dur:0},
+  bz:{n:'ضربات السيفين',cd:10,hits:4,dmg:26,col:'#c9d3e6',fx:'cut'},
+  noDom:true,domLabel:'ضربة الكاتانا'};
 
 /* ===== ربط المهارات الخاصة باللعبة ===== */
 const _use=use;
@@ -96,6 +104,8 @@ const PAL={naoya:{hair:'#ecd773',skin:'#ffe0c8',coat:'#3a2f2a',acc:'#7ee8c9',eye
 const HR={naoya:[[-9,1],[-10,-7],[-4,-10],[3,-13],[10,-9],[11,0],[9,-3],[4,-6],[-2,-7],[-7,-5]],gojo:[[-9,-1],[-12,-9],[-6,-7],[-6,-15],[-1,-9],[3,-16],[5,-8],[12,-11],[9,-1],[5,-5],[1,-3],[-3,-5],[-6,-3]],
  suk:[[-9,0],[-11,-8],[-5,-7],[-3,-14],[1,-8],[6,-13],[7,-6],[12,-7],[9,0],[5,-4],[0,-2],[-5,-4]],
  kashimo:[[-9,7],[-11,-6],[-6,-9],[-2,-15],[3,-10],[8,-14],[10,-6],[10,7],[8,-1],[3,-4],[-2,-2],[-6,-4],[-8,2]]};
+PAL.toji={hair:'#17171d',skin:'#f0cdb0',coat:'#15171f',acc:'#eef2f8',eye:'#222630'};
+HR.toji=[[-9,0],[-10,-6],[-7,-11],[-3,-9],[-1,-16],[3,-12],[6,-16],[9,-9],[10,-3],[8,1],[4,-3],[0,-4],[-4,-2]];
 const ln=(x1,y1,x2,y2)=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke()};
 function overlays(){
   (G.Gh||[]).forEach(o=>{g.save();g.globalAlpha=Math.max(0,o.t/.35)*.5;g.fillStyle=o.c;g.beginPath();g.ellipse(X(o.x),Y(o.y),10*S,26*S,0,0,7);g.fill();g.restore()});
@@ -138,6 +148,17 @@ drawStickman=function(e){
   if(e.k==='suk'){g.strokeStyle='#2a2a33';g.lineWidth=1.4*sc;for(const s of[-1,1])ln(s*3.6*sc,hy+4.5*sc,s*3.6*sc,hy+7.5*sc);ln(-7*sc,hy-2*sc,-7*sc,hy+3*sc)}
   if(e.k==='kashimo'){g.strokeStyle='#d6455d';g.lineWidth=1.4*sc;ln(-5*sc,hy-3*sc,3*sc,hy+4*sc);
     g.strokeStyle='#8ad0ff';g.lineWidth=1.6*sc;g.beginPath();for(let n=0;n<2;n++){const sx=(Math.random()-.5)*34*sc,sy=(Math.random()-.5)*50*sc;g.moveTo(sx,sy);g.lineTo(sx+(Math.random()-.5)*10*sc,sy+(Math.random()-.5)*10*sc)}g.stroke()}
+  if(e.k==='toji'){
+    // سيفين توجي: كاتانا في إيده وكاتانا على ضهره (Split Soul Katana)
+    g.lineCap='round';
+    g.strokeStyle='#dfe7f5';g.lineWidth=2.4*sc;ln(-f*3*sc,-11*sc,-f*14*sc,-33*sc);
+    g.strokeStyle='#14151c';g.lineWidth=3*sc;ln(-f*3*sc,-11*sc,-f*0.5*sc,-6*sc);
+    g.strokeStyle='#dfe7f5';g.lineWidth=2.8*sc;ln(hx,hy2,hx+f*28*sc,hy2-24*sc);
+    g.strokeStyle='#14151c';g.lineWidth=3.4*sc;ln(hx,hy2,hx-f*4*sc,hy2+3*sc);
+    g.strokeStyle='#8a94a8';g.lineWidth=1.8*sc;ln(hx-f*2*sc,hy2+1.5*sc,hx-f*5*sc,hy2-2.5*sc);
+    // نظارة شمس توجي
+    g.fillStyle='#050608';g.fillRect(-7*sc,hy-1.5*sc,14*sc,4*sc);
+  }
   g.restore()};
 /* ===== زر اندفاع الـ24 إطار ===== */
 const _start=start;
@@ -177,5 +198,54 @@ drawArena=function(){
   for(let n=0;n<24;n++){const ag=n*Math.PI/12,px=ox+Math.cos(ag)*(R+14*S),py=oy+Math.sin(ag)*(R+14*S),pl=.6+.4*Math.sin(T*3+n);
     g.save();g.shadowColor='#4fc3ff';g.shadowBlur=12;g.globalAlpha=.5+.5*pl;g.fillStyle='#8fd8ff';g.beginPath();g.moveTo(px,py-9*S);g.lineTo(px+5*S,py);g.lineTo(px,py+9*S);g.lineTo(px-5*S,py);g.closePath();g.fill();g.restore()}
 };
+/* ===== الإعدادات: مكان الأزرار وحجمها ===== */
+const LAY=Object.assign({swap:false,size:1},M.lay||{});
+const SIZES=[[.8,'صغير'],[1,'وسط'],[1.2,'كبير']];
+function applyLayout(){const pd=document.getElementById('pad'),bt=document.getElementById('btns');
+  bt.style.left=LAY.swap?'8px':'auto';bt.style.right=LAY.swap?'auto':'8px';
+  pd.style.left=LAY.swap?'auto':'0';pd.style.right=LAY.swap?'0':'auto';
+  bt.style.zoom=LAY.size}
+function saveLay(){M.lay={swap:LAY.swap,size:LAY.size};save()}
+applyLayout();
+function settings(){
+  const si=SIZES.findIndex(s=>s[0]===LAY.size);
+  ui('الإعدادات','غيّر مكان الأزرار وحجمها، والتغيير بيتحفظ على جهازك.',[
+    ['مكان الأزرار: '+(LAY.swap?'شمال':'يمين'),()=>{LAY.swap=!LAY.swap;applyLayout();saveLay();settings()}],
+    ['حجم الأزرار: '+(si<0?'وسط':SIZES[si][1]),()=>{const i=si<0?1:si;LAY.size=SIZES[(i+1)%SIZES.length][0];applyLayout();saveLay();settings()}],
+    ['رجوع للوضع الافتراضي',()=>{LAY.swap=false;LAY.size=1;applyLayout();saveLay();settings()},'s'],
+    ['رجوع',menu,'s']])}
+
+/* ===== ابدأ اللعبة (اختيار الصعوبة والشخصية) ===== */
+function pick(){G=null;ui('ابدأ اللعبة','اختار مستوى الصعوبة وبعدين شخصيتك',
+  Object.keys(CH).map(k=>['العب بـ '+CH[k].n,()=>start(k)]).concat([['رجوع',menu,'s']]),undefined,true)}
+
+/* ===== لعب جماعي (placeholder لحد ما يكون فيه سيرفر) ===== */
+function multi(){G=null;ui('لعب جماعي','اللعب الجماعي أونلاين محتاج سيرفر، والنسخة دي لسه مش متصلة بسيرفر. الخيار ده تحت التطوير.',[['رجوع',menu,'s']])}
+
+/* ===== الشاشة الرئيسية ===== */
+menu=function(){G=null;ui('ساحة القتال - Anime 2D','اختار من القائمة',[
+  ['ابدأ اللعبة',pick],
+  ['لعب جماعي',multi,'s'],
+  ['الإعدادات',settings,'s'],
+  ['شخصياتي: إضافة وتعديل',editor,'s']])};
+
+/* ===== توجي: مفيش مجال، فالزر بتاعه بيبقى "ضربة الكاتانا" ===== */
+const _start3=start;
+start=function(k){_start3(k);const d=CH[k].noDom&&document.getElementById('bdom');if(d)d.querySelector('span').textContent=CH[k].domLabel};
+function tojiFin(i){const e=G.p[i],t=G.p[1-i];if(e.dm<DOMCH||e.stun>0||e.dc>0)return;
+  e.dm=0;if(i===1)G.bc=G.t;
+  const a=Math.atan2(t.y-e.y,t.x-e.x)+Math.PI;
+  ring(e.x,e.y,'#e6edf8',110);
+  e.x=t.x+Math.cos(a)*44;e.y=t.y+Math.sin(a)*44;clampA(e);
+  e.face=t.x>e.x?1:-1;e.dash=.12;
+  slashFx(t.x,t.y,'#e6edf8',4,60);G.shk=.3;
+  dmgTo(1-i,90,1);G.p[1-i].stun=Math.max(G.p[1-i].stun,.5);pop(e,'ضربة الكاتانا!','#e6edf8')}
+const _use4=use;
+use=function(i,k,tx,ty){if(k==='dom'&&G&&G.st==='play'&&CH[G.p[i].k].noDom){tojiFin(i);return}return _use4(i,k,tx,ty)};
+
+/* ===== توجي: القيد السماوي، ضرره الجسدي +15% ===== */
+const _dmgT=dmgTo;
+dmgTo=function(i,d,sure){if(G&&G.p[1-i]&&G.p[1-i].k==='toji')d*=1.15;return _dmgT(i,d,sure)};
+
 if(!G)menu();
 })();
