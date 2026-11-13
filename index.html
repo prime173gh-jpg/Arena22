@@ -58,7 +58,7 @@ const CH={
   dom:{n:'حقل التفريغ الكهربائي',type:'lightning',tick:.25,dmg:32,dur:7}}
 };
 
-const DOMCH=200,ULTCH=300,ULT=10,CLASH=30,CAST=2.2,A=300;
+const DOMCH=200,ULTCH=300,ULT=10,CLASH=30,CAST=2.2,A=460;
 const TY=['pull','orb','beam','slash','cleave'],DF={pull:{dur:1.5,tick:.125,dmg:15},orb:{v:320,ex:85,bn:0,col:'#ff9a3c'},beam:{w:45,col:'#b86bff'},slash:{cnt:3,v:580},cleave:{r:85}};
 
 function fix(c){try{if(!c||!c.id||!c.n||!(c.hp>0)||!Array.isArray(c.sk)||c.sk.length!==3)return null;
@@ -72,7 +72,7 @@ try{M=Object.assign(M,JSON.parse(localStorage.getItem('bm')||'{}'))}catch(e){}
 const save=()=>{try{localStorage.setItem('bm',JSON.stringify(M))}catch(e){}};
 const joy={on:false,id:null,ox:0,oy:0,x:0,y:0},B={};
 
-const STARS=Array.from({length:45},()=>({a:Math.random()*6.28,r:Math.random()*280,s:1+Math.random()*2.5}));
+const STARS=Array.from({length:45},()=>({a:Math.random()*6.28,r:Math.random()*440,s:1+Math.random()*2.5}));
 
 function rs(){dpr=devicePixelRatio||1;const r=cv.getBoundingClientRect();W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;if(W>H){S=Math.min(W*.45,H*.86)/(A*2+30);cx=W/2;cy=H*.55}else{S=Math.min(W,H*.68)/(A*2+50);cx=W/2;cy=H*.38}}
 addEventListener('resize',rs);
@@ -502,6 +502,6 @@ addEventListener('keyup',e=>keys[e.key]=false);
 try{navigator.serviceWorker&&navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 rs();menu();requestAnimationFrame(draw);
 </script>
-<script src="mods.js?v=3"></script>
+<script src="mods.js?v=4"></script>
 </body>
 </html>
