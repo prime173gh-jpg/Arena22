@@ -375,7 +375,7 @@ function trainPick(){G=null;ui('التدريب','اختار شخصيتك، ال�
 
 /* ===== ناويه: إطار الزجاج، تجميد الإطار، مطر الإطارات ===== */
 const NAO_POOL=100;/* إجمالي دمج المهارة. كل ضربة = 30% منه */
-let FRM=[],NAO={glassT:0,rainT:0,held:-1,off:{x:0,y:0},bonus:false,mode:''};
+let FRM=[],NAO={glassT:0,rainT:0,held:-1,off:{x:0,y:0},bonus:false,mode:'',spdMul:0,spdT:0};
 function frameRing(){FRM=[];for(let n=0;n<6;n++){const a=n*Math.PI/3+.3,R=A*.55;
   FRM.push({x:Math.cos(a)*R,y:Math.sin(a)*R,ang:a+Math.PI/2,alive:true})}}
 SP.glass=function(i,s,e){frameRing();NAO.mode='glass';NAO.glassT=8;NAO.rainT=0;NAO.held=-1;
@@ -391,12 +391,14 @@ SP.rain=function(i,s,e){const q=G.p[1-i];if(!q||!(q.frz>0))return;
 function tickNaoya(dt){
   const ni=G.p.findIndex(q=>q.k==='naoya');if(ni<0)return;const e=G.p[ni];
   NAO.glassT=Math.max(0,NAO.glassT-dt);NAO.rainT=Math.max(0,NAO.rainT-dt);
+  NAO.spdT=Math.max(0,NAO.spdT-dt);if(NAO.spdT<=0)NAO.spdMul=0;
+  if(NAO.spdMul>0&&e.stun<=0&&e.dc<=0&&e.dash<=0&&(e.d[0]||e.d[1])){e.x+=e.d[0]*CH.naoya.sp*NAO.spdMul*dt;e.y+=e.d[1]*CH.naoya.sp*NAO.spdMul*dt;clampA(e)}
   if(FRM.length){
     for(const f of FRM){if(!f.alive||D(e,f)>=46)continue;
       f.alive=false;slashFx(f.x,f.y,'#bff7ea',3,40);G.shk=Math.max(G.shk,.1);
-      e.haste=Math.max(e.haste,2);pop(e,'كسرت إطار: سرعة!','#7ee8c9');
+      e.haste=Math.max(e.haste,2);NAO.spdMul=Math.min(3.6,NAO.spdMul+.6);NAO.spdT=6.5;pop(e,'كسرت إطار: سرعة!','#7ee8c9');
       if(NAO.mode==='rain'&&NAO.held>=0){NAO.bonus=true;dmgTo(NAO.held,NAO_POOL*.3);NAO.bonus=false}}
-    if(FRM.every(f=>!f.alive)){e.haste=Math.max(e.haste,6.5);pop(e,'سرعة 6.5 ث!','#7ee8c9');G.shk=Math.max(G.shk,.3);
+    if(FRM.every(f=>!f.alive)){NAO.spdMul=3.6;NAO.spdT=6.5;e.haste=Math.max(e.haste,6.5);pop(e,'سرعة 6.5 ث!','#7ee8c9');G.shk=Math.max(G.shk,.3);
       FRM=[];NAO.glassT=0;NAO.held=-1}
     else if(NAO.glassT<=0&&NAO.rainT<=0)FRM=[];
   }
@@ -433,15 +435,50 @@ step=function(dt){_step4(dt);
   if(G&&G.st==='play'){G.p.forEach(q=>{q.frz=Math.max(0,(q.frz||0)-dt)});tickNaoya(dt);
     if(G.train&&G.p[1]&&TR){const d=G.p[1];d.x=TR.x;d.y=TR.y;d.hp=d.max;d.stun=0;d.dc=0}}};
 const _start6=start;
-start=function(k){FRM=[];NAO={glassT:0,rainT:0,held:-1,off:{x:0,y:0},bonus:false,mode:''};TR=null;_start6(k)};
+start=function(k){FRM=[];NAO={glassT:0,rainT:0,held:-1,off:{x:0,y:0},bonus:false,mode:'',spdMul:0,spdT:0};TR=null;_start6(k)};
 const _draw6=draw;
 draw=function(t){_draw6(t);if(G&&G.st==='play')drawFrm()};
 
 /* ===== شكل الشخصيات زي الصور: ألوان، وإكسسوارات ===== */
 PAL.gojo={hair:'#f4f7ff',skin:'#ffe3d0',coat:'#1f1a33',acc:'#7a5cc2',eye:'#6fd8ff'};
 PAL.naoya={hair:'#9fe8c4',skin:'#ffe0c8',coat:'#f1f1f6',acc:'#d64434',eye:'#8fe0c0'};
-PAL.kashimo={hair:'#c8c25c',skin:'#f4d3b8',coat:'#1c2636',acc:'#b8bdc9',eye:'#d6455d'};
+PAL.kashimo={hair:'#9b8cff',skin:'#f4d3b8',coat:'#1c2636',acc:'#c9c3ff',eye:'#d6455d'};
 PAL.suk={hair:'#ff7f9f',skin:'#e6b08a',coat:'#e6b08a',acc:'#15151d',eye:'#ff2e4a'};
 
+
+/* ===== الشخصيات ككور دائرية زي فيديو المرجع ===== */
+function drawCore(e){
+  const c=CH[e.k],P=PAL[e.k]||{hair:c.col,skin:'#ffffff',coat:'#222a5a',acc:c.col,eye:c.col},H=HR[e.k]||HR.suk;
+  const px=X(e.x),py=Y(e.y),f=e.face,sc=S*1.3,bob=e.walk>0?Math.abs(Math.sin(e.walk))*2*sc:Math.sin(G.t*4+e.x)*sc;
+  const R=22*sc,cy=py-bob;
+  g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.ellipse(px,py+R*1.05,R*.8,R*.22,0,0,7);g.fill();
+  if(e.stun>0){g.strokeStyle='#ffd166';g.lineWidth=2.5;g.setLineDash([5,4]);g.beginPath();g.arc(px,cy,R*1.5,0,7);g.stroke();g.setLineDash([])}
+  if(e.ult>0){g.strokeStyle='#ffd166';g.lineWidth=3;g.globalAlpha=.75;g.beginPath();g.arc(px,cy,R*1.7+3*Math.sin(G.t*20),0,7);g.stroke();g.globalAlpha=1}
+  if(e.blue>0){g.strokeStyle='#4fc3ff';g.globalAlpha=.45;g.lineWidth=3;g.beginPath();g.arc(px,cy,R*2.6+4*Math.sin(G.t*14),0,7);g.stroke();g.globalAlpha=1}
+  if(e.haste>0){g.fillStyle=c.col;for(let n=1;n<4;n++){g.globalAlpha=.22/n;g.beginPath();g.arc(px-f*n*R*.7,cy,R*.95,0,7);g.fill()}g.globalAlpha=1}
+  g.save();g.lineCap='round';g.lineJoin='round';
+  g.shadowColor=e.dash>0?'#ffffff':c.col;g.shadowBlur=e.dash>0?28:14;
+  const gr=g.createRadialGradient(px-R*.3,cy-R*.35,R*.1,px,cy,R);
+  gr.addColorStop(0,'#ffffff');gr.addColorStop(.6,'#eef1f8');gr.addColorStop(1,P.acc);
+  g.fillStyle=gr;g.beginPath();g.arc(px,cy,R,0,7);g.fill();
+  g.shadowBlur=0;g.lineWidth=3*sc;g.strokeStyle=c.col;g.beginPath();g.arc(px,cy,R,0,7);g.stroke();
+  /* الشعر من نفس شكل الشخصية */
+  g.fillStyle=P.hair;g.beginPath();
+  H.forEach((p,n)=>{const x=px+p[0]*sc*1.4*f,y=cy-R*.45+p[1]*sc*.8;n?g.lineTo(x,y):g.moveTo(x,y)});
+  g.closePath();g.fill();
+  /* الوجه */
+  g.fillStyle=P.eye;g.beginPath();g.arc(px-R*.3+f*R*.08,cy+R*.02,R*.1,0,7);g.arc(px+R*.3+f*R*.08,cy+R*.02,R*.1,0,7);g.fill();
+  g.strokeStyle='#2a2330';g.lineWidth=1.4*sc;g.beginPath();g.arc(px+f*R*.05,cy+R*.4,R*.18,.2,2.9);g.stroke();
+  /* إكسسوارات كل شخصية */
+  if(e.k==='naoya'){g.fillStyle=P.hair;g.beginPath();g.arc(px-R*.35,cy-R*1.02,R*.22,0,7);g.arc(px+R*.35,cy-R*1.02,R*.22,0,7);g.fill()}
+  if(e.k==='kashimo'){g.strokeStyle='#6b4a2c';g.lineWidth=2.6*sc;ln(px+f*R*1.25,cy+R*1.2,px+f*R*1.25,cy-R*1.9);
+    g.fillStyle=P.acc;g.beginPath();g.arc(px+f*R*1.25,cy-R*1.9,R*.18,0,7);g.fill()}
+  if(e.k==='suk'){g.strokeStyle='#15151d';g.lineWidth=1.6*sc;ln(px-R*.6,cy+R*.1,px-R*.35,cy+R*.45);ln(px+R*.6,cy-R*.1,px+R*.35,cy+R*.2)}
+  if(e.k==='toji'){g.strokeStyle='#2a2330';g.lineWidth=2.6*sc;ln(px-f*R*1.1,cy+R*1.3,px+f*R*.9,cy-R*1.9);
+    g.strokeStyle='#e8eef8';g.lineWidth=3*sc;ln(px+f*R*.9,cy-R*1.9,px+f*R*1.1,cy-R*2.3);
+    g.strokeStyle='#dfe7f5';g.lineWidth=2.6*sc;ln(px+f*R*1.2,cy+R*.6,px-f*R*.6,cy-R*1.7)}
+  g.restore()}
+const _dsOld=drawStickman;
+drawStickman=function(e){drawCore(e);if(e===G.p[1])overlays()};
 if(!G)menu();
 })();
