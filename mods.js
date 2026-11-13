@@ -166,6 +166,19 @@ drawStickman=function(e){
     // كتافة توجي العضلية (زي الصورة، من غير نظارة)
     g.fillStyle='#2b2e38';g.beginPath();g.arc(-8.5*sc,-7*sc,4.8*sc,0,7);g.arc(8.5*sc,-7*sc,4.8*sc,0,7);g.fill();
   }
+  if(e.k==='naoya'){
+    // عصاية ناويه الحمرا في إيده، وشعرتين فوق دماغه
+    g.strokeStyle='#c8322a';g.lineWidth=2.6*sc;ln(hx+f*4*sc,hy2+10*sc,hx+f*4*sc,hy2-30*sc);
+    g.fillStyle='#e0b53a';g.beginPath();g.arc(hx+f*4*sc,hy2-30*sc,2.4*sc,0,7);g.fill();
+    g.fillStyle=P.hair;g.beginPath();g.arc(-4*sc,hy-13*sc,2.6*sc,0,7);g.arc(4*sc,hy-13*sc,2.6*sc,0,7);g.fill();
+    g.strokeStyle='#ffffff';g.lineWidth=1.4*sc;ln(-6*sc,6*sc,6*sc,6*sc);
+  }
+  if(e.k==='suk'){
+    // وشم سوكونا وأساور سودا
+    g.strokeStyle='#15151d';g.lineWidth=1.6*sc;
+    ln(-5*sc,-6*sc,-2*sc,0);ln(4*sc,-4*sc,6*sc,2*sc);ln(-6*sc,-1*sc,-9*sc,3*sc);
+    g.fillStyle='#15151d';g.fillRect(hx-3*sc,hy2-1*sc,6*sc,2*sc);
+  }
   g.restore()};
 /* ===== زر اندفاع الـ24 إطار ===== */
 const _start=start;
@@ -223,7 +236,7 @@ function settings(){
     ['رجوع',menu,'s']])}
 
 /* ===== ابدأ اللعبة (اختيار الصعوبة والشخصية) ===== */
-function pick(){G=null;ui('ابدأ اللعبة','اختار مستوى الصعوبة وبعدين شخصيتك',
+function pickChar(){G=null;ui('ابدأ اللعبة','اختار مستوى الصعوبة وبعدين شخصيتك',
   Object.keys(CH).map(k=>['العب بـ '+CH[k].n,()=>start(k)]).concat([['رجوع',menu,'s']]),undefined,true)}
 
 /* ===== لعب جماعي (placeholder لحد ما يكون فيه سيرفر) ===== */
@@ -232,6 +245,7 @@ function multi(){G=null;ui('لعب جماعي','اللعب الجماعي أون
 /* ===== الشاشة الرئيسية ===== */
 menu=function(){G=null;ui('ساحة القتال - Anime 2D','اختار من القائمة',[
   ['ابدأ اللعبة',pick],
+  ['تدريب',trainPick,'s'],
   ['لعب جماعي',multi,'s'],
   ['الإعدادات',settings,'s'],
   ['شخصياتي: إضافة وتعديل',editor,'s']])};
@@ -349,5 +363,85 @@ const _start5=start;
 start=function(k){BLUE=null;_start5(k)};
 const _draw5=draw;
 draw=function(t){_draw5(t);if(BLUE&&G&&G.st==='play')drawBlue()};
+/* ===== طريقة اللعب: 1 ضد 1، 2 ضد 2 (قريباً)، تدريب ===== */
+function pick(){G=null;ui('ابدأ اللعبة','اختار طريقة اللعب',[
+  ['1 ضد 1',pickChar],
+  ['2 ضد 2 (قريباً)',twov],
+  ['رجوع',menu,'s']])}
+function twov(){ui('2 ضد 2','الوضع ده لسه تحت التطوير، لأنه محتاج تعديل كبير على محرك القتال.',[['رجوع',pick,'s']])}
+let TR=null;
+function trainPick(){G=null;ui('التدريب','اختار شخصيتك، الدمية مش هترد بأي حركة وبتتعالج لوحدها',
+  Object.keys(CH).map(k=>['تدرّب بـ '+CH[k].n,()=>{start(k);G.train=true;TR={x:G.p[1].x,y:G.p[1].y}}]).concat([['رجوع',menu,'s']]))}
+
+/* ===== ناويه: إطار الزجاج، تجميد الإطار، مطر الإطارات ===== */
+const NAO_POOL=100;/* إجمالي دمج المهارة. كل ضربة = 30% منه */
+let FRM=[],NAO={glassT:0,rainT:0,held:-1,off:{x:0,y:0},bonus:false,mode:''};
+function frameRing(){FRM=[];for(let n=0;n<6;n++){const a=n*Math.PI/3+.3,R=A*.55;
+  FRM.push({x:Math.cos(a)*R,y:Math.sin(a)*R,ang:a+Math.PI/2,alive:true})}}
+SP.glass=function(i,s,e){frameRing();NAO.mode='glass';NAO.glassT=8;NAO.rainT=0;NAO.held=-1;
+  ring(e.x,e.y,'#7ee8c9',120);pop(e,'إطار زجاجي!','#7ee8c9');G.shk=Math.max(G.shk,.15)};
+SP.frames=function(i,s,e,t){mark(t.x,t.y,62,.5,'#7ee8c9',1);
+  later(.5,()=>{const q=G.p[1-i];if(!q||q.hp<=0)return;
+    if(D(q,{x:t.x,y:t.y})<62+q.r){q.frz=4;q.stun=Math.max(q.stun,1);dmgTo(1-i,s.dmg);pop(q,'اتجمّد!','#7ee8c9')}
+    else pop(e,'ضيّعت الهدف','#7ee8c9')})};
+SP.rain=function(i,s,e){const q=G.p[1-i];if(!q||!(q.frz>0))return;
+  NAO.mode='rain';NAO.held=1-i;NAO.off={x:q.x-e.x,y:q.y-e.y};NAO.rainT=8;NAO.glassT=0;
+  frameRing();pop(e,'مطر الإطارات!','#7ee8c9');G.shk=Math.max(G.shk,.2)};
+
+function tickNaoya(dt){
+  const ni=G.p.findIndex(q=>q.k==='naoya');if(ni<0)return;const e=G.p[ni];
+  NAO.glassT=Math.max(0,NAO.glassT-dt);NAO.rainT=Math.max(0,NAO.rainT-dt);
+  if(FRM.length){
+    for(const f of FRM){if(!f.alive||D(e,f)>=46)continue;
+      f.alive=false;slashFx(f.x,f.y,'#bff7ea',3,40);G.shk=Math.max(G.shk,.1);
+      e.haste=Math.max(e.haste,2);pop(e,'كسرت إطار: سرعة!','#7ee8c9');
+      if(NAO.mode==='rain'&&NAO.held>=0){NAO.bonus=true;dmgTo(NAO.held,NAO_POOL*.3);NAO.bonus=false}}
+    if(FRM.every(f=>!f.alive)){e.haste=Math.max(e.haste,6.5);pop(e,'سرعة 6.5 ث!','#7ee8c9');G.shk=Math.max(G.shk,.3);
+      FRM=[];NAO.glassT=0;NAO.held=-1}
+    else if(NAO.glassT<=0&&NAO.rainT<=0)FRM=[];
+  }
+  if(NAO.held>=0){const q=G.p[NAO.held];
+    if(!q||q.hp<=0||NAO.rainT<=0){NAO.held=-1}
+    else{q.x=e.x+NAO.off.x;q.y=e.y+NAO.off.y;clampA(q)}}
+}
+function drawFrm(){if(!FRM.length)return;
+  FRM.forEach((f,idx)=>{if(!f.alive)return;
+    const x=X(f.x),y=Y(f.y),w=58*S,h=88*S,pl=.6+.4*Math.sin(G.t*6+idx);
+    g.save();g.translate(x,y);g.rotate(f.ang);g.globalCompositeOperation='lighter';
+    g.strokeStyle='rgba(126,232,201,'+(.55+.35*pl)+')';g.lineWidth=3*S;g.shadowColor='#7ee8c9';g.shadowBlur=14;
+    g.strokeRect(-w/2,-h/2,w,h);
+    g.fillStyle='rgba(126,232,201,.08)';g.fillRect(-w/2,-h/2,w,h);
+    g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=1.5*S;g.beginPath();g.moveTo(-w*.3,-h*.4);g.lineTo(w*.05,h*.05);g.stroke();
+    g.restore()})}
+
+/* ربط الحالات الجديدة باللعبة */
+const _dmgX=dmgTo;
+dmgTo=function(i,d,sure){const r=_dmgX(i,d,sure);
+  const at=G&&G.p[1-i];
+  if(at&&at.k==='naoya'&&NAO.glassT>0&&!NAO.bonus&&r>0){NAO.bonus=true;_dmgX(i,NAO_POOL*.3,sure);NAO.bonus=false}
+  return r};
+const _use6=use;
+use=function(i,k,tx,ty){
+  if(G&&G.st==='play'){
+    if(G.train&&i===1)return;
+    if(NAO.held===i)return;
+    if(typeof k==='number'){const s=CH[G.p[i].k].sk[k],o=G.p[1-i];
+      if(s&&s.sx==='rain'&&!(o&&o.frz>0))return}}
+  return _use6(i,k,tx,ty)};
+const _step4=step;
+step=function(dt){_step4(dt);
+  if(G&&G.st==='play'){G.p.forEach(q=>{q.frz=Math.max(0,(q.frz||0)-dt)});tickNaoya(dt);
+    if(G.train&&G.p[1]&&TR){const d=G.p[1];d.x=TR.x;d.y=TR.y;d.hp=d.max;d.stun=0;d.dc=0}}};
+const _start6=start;
+start=function(k){FRM=[];NAO={glassT:0,rainT:0,held:-1,off:{x:0,y:0},bonus:false,mode:''};TR=null;_start6(k)};
+const _draw6=draw;
+draw=function(t){_draw6(t);if(G&&G.st==='play')drawFrm()};
+
+/* ===== شكل الشخصيات زي الصور: ألوان، وإكسسوارات ===== */
+PAL.gojo={hair:'#f4f7ff',skin:'#ffe3d0',coat:'#1f1a33',acc:'#7a5cc2',eye:'#6fd8ff'};
+PAL.naoya={hair:'#9fe8c4',skin:'#ffe0c8',coat:'#f1f1f6',acc:'#d64434',eye:'#8fe0c0'};
+PAL.kashimo={hair:'#c8c25c',skin:'#f4d3b8',coat:'#1c2636',acc:'#b8bdc9',eye:'#d6455d'};
+PAL.suk={hair:'#ff7f9f',skin:'#e6b08a',coat:'#e6b08a',acc:'#15151d',eye:'#ff2e4a'};
+
 if(!G)menu();
 })();
