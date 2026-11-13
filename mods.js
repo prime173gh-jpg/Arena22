@@ -295,5 +295,59 @@ draw=function(t){_draw2(t);
       g.lineWidth=1.2*S;g.strokeStyle='#ffffff';g.beginPath();g.moveTo(X(p.x-ca*L*.7),Y(p.y-sa*L*.7));g.lineTo(X(p.x+ca*L*.7),Y(p.y+sa*L*.7));g.stroke()}
   }
   g.restore()};
+/* ===== مهارات توجي الجديدة: طعنة واضحة وعاصفة قطع ===== */
+CH.toji.sk=[
+  {n:'طعنة الرمح المعكوس',x:'lunge',cd:5,dmg:110},
+  {n:'عاصفة الكاتانا',x:'flurry',cd:6,dmg:30,hits:6},
+  {n:'رمية الرمح المعكوس',t:'orb',cd:8,dmg:130,ex:90,v:480,bn:0,col:'#e8eef8',u:{dmg:230,ex:150}}];
+function tojiLunge(i,s){const e=G.p[i],t=G.p[1-i],dir=t.x>e.x?1:-1;
+  ring(e.x,e.y,'#e8eef8',90);
+  e.x=t.x-dir*44;clampA(e);e.face=dir;e.dash=.1;
+  slashFx(t.x,t.y,'#e8eef8',3,70);G.shk=Math.max(G.shk,.25);
+  dmgTo(1-i,s.dmg);t.stun=Math.max(t.stun,.6);pop(e,'طعنة!','#e8eef8')}
+function tojiFlurry(i,s){const e=G.p[i],t=G.p[1-i];e.face=t.x>e.x?1:-1;
+  G.shk=Math.max(G.shk,.2);
+  for(let h=0;h<s.hits;h++){slashFx(t.x+(Math.random()-.5)*36,t.y-24+Math.random()*44,'#dfe7f5',3,50);dmgTo(1-i,s.dmg)}
+  pop(e,'عاصفة!','#dfe7f5')}
+
+/* ===== جوجو: الكرة الزرقا في نص الحلبة بتشفط الكل ما عدا صاحبها ===== */
+let BLUE=null;
+function spawnBlue(i,s){BLUE={o:i,x:0,y:0,t:0,dur:s.dur||5,tick:.125,acc:0,dmg:s.dmg||18};
+  ring(0,0,'#4fc3ff',220);G.shk=Math.max(G.shk,.15)}
+function tickBlue(dt){const B=BLUE;if(!B)return;B.t+=dt;if(B.t>=B.dur){BLUE=null;return}
+  B.acc+=dt;const hit=B.acc>=B.tick;if(hit)B.acc-=B.tick;
+  G.p.forEach((q,j)=>{if(j===B.o||q.hp<=0)return;
+    const dx=B.x-q.x,dy=B.y-q.y,l=Math.hypot(dx,dy)||1,sp=Math.min(l,340*dt);
+    if(l>8){q.x+=dx/l*sp;q.y+=dy/l*sp}clampA(q);
+    if(hit)dmgTo(j,B.dmg)})}
+function drawBlue(){const B=BLUE,pulse=1+.07*Math.sin(G.t*12),R=(60+30*Math.min(1,B.t*2))*pulse;
+  const x=X(B.x),y=Y(B.y);
+  g.save();g.globalCompositeOperation='lighter';
+  const gr=g.createRadialGradient(x,y,R*.15*S,x,y,R*1.7*S);
+  gr.addColorStop(0,'rgba(255,255,255,.95)');gr.addColorStop(.3,'rgba(120,210,255,.9)');
+  gr.addColorStop(.65,'rgba(40,120,255,.4)');gr.addColorStop(1,'rgba(40,120,255,0)');
+  g.fillStyle=gr;g.beginPath();g.arc(x,y,R*1.7*S,0,7);g.fill();
+  g.strokeStyle='rgba(79,195,255,.85)';g.lineWidth=3*S;g.beginPath();g.arc(x,y,R*S,0,7);g.stroke();
+  g.restore()}
+const _use5=use;
+use=function(i,k,tx,ty){
+  if(G&&G.st==='play'&&typeof k==='number'&&G.p[i]){
+    const e=G.p[i],c=CH[e.k],s=c.sk[k],o=G.p[1-i];
+    if(s&&(s.t==='pull'||s.x)){
+      if(e.stun>0||e.dc>0||e.cd[k]>0)return;
+      if(s.t==='pull'){
+        if(BLUE||(o&&o.k==='toji'))return; /* الرمح المعكوس بيبطل الأزرق */
+        e.cd[k]=s.cd;if(i===1)G.bc=G.t;spawnBlue(i,s);return}
+      e.cd[k]=s.cd;if(i===1)G.bc=G.t;
+      if(s.x==='lunge')tojiLunge(i,s);else if(s.x==='flurry')tojiFlurry(i,s);
+      return}
+  }
+  return _use5(i,k,tx,ty)};
+const _step3=step;
+step=function(dt){_step3(dt);if(BLUE&&G&&G.st==='play')tickBlue(dt)};
+const _start5=start;
+start=function(k){BLUE=null;_start5(k)};
+const _draw5=draw;
+draw=function(t){_draw5(t);if(BLUE&&G&&G.st==='play')drawBlue()};
 if(!G)menu();
 })();
