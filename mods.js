@@ -1,4 +1,4 @@
-/* mods.js: تعديل مهارات توجي (داش شق الروح وسلسلة سريعة) + دعم LAN حقيقي */
+/* mods.js: تعديل AOE توجي وميكانيكا إطارات وزجاج ناويه زينين */
 (()=>{
 TY.push('special');
 const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -21,35 +21,62 @@ const SP={
  storm(i,s,e,t){const ti=getTarget(i);for(let n=0;n<7;n++){const ox=t.x+(n?(Math.random()-.5)*160:0),oy=t.y+(n?(Math.random()-.5)*160:0),dl=.35+n*.18;
    mark(ox,oy,42,dl,'#9333ea');
    later(dl,()=>{const q=G.p[ti];if(!q||q.hp<=0)return;lightningFx(ox,oy);G.shk=.12;if(D(q,{x:ox,y:oy})<42+q.r)dmgTo(ti,s.dmg,false,i)})}},
- glass(i,s,e){mark(e.x,e.y,46,.6,'#7ee8c9',1,e);pop(e,'إطار...','#7ee8c9');
-   later(.6,()=>{if(e.hp<=0)return;e.haste=s.dur||5;e.dcd=0;slashFx(e.x,e.y,'#bff7ea',7,62);ring(e.x,e.y,'#7ee8c9',95);G.shk=.22;pop(e,'كسر الزجاج: سرعة!','#7ee8c9');
-     const ti=getTarget(i),q=G.p[ti];if(q&&q.hp>0&&D(e,q)<95+q.r)dmgTo(ti,s.dmg,false,i)})},
+
+ /* ===== مهارات ناويه زينين الجديدة ===== */
+ /* 1. الإطارات الزجاجية المحيطة بالحلبة: رسم 6 إطارات تكسرها لزيادة السرعة 7 ثواني ودمج إضافي 30% */
+ glassFrames(i,s,e){
+   pop(e,'إطارات زجاجية محيطة!','#7ee8c9');
+   ring(e.x,e.y,'#7ee8c9',150);
+   G.naoyaFrames = G.naoyaFrames || [];
+   // خلق 6 إطارات زجاجية موزعة حول الحلبة
+   for(let k=0; k<6; k++){
+     const ang = k * (Math.PI / 3);
+     G.naoyaFrames.push({
+       x: Math.cos(ang) * (A * 0.7),
+       y: Math.sin(ang) * (A * 0.7),
+       r: 35, broken: false
+     });
+   }
+ },
+
+ /* 2. تجميد الإطار القديم */
  frames(i,s,e,t){const ti=getTarget(i),ox=t.x,oy=t.y;mark(ox,oy,62,.55,'#7ee8c9',1);
    later(.55,()=>{const q=G.p[ti];if(!q||q.hp<=0)return;slashFx(ox,oy,'#bff7ea',4,50);G.shk=.12;
-     if(D(q,{x:ox,y:oy})<62+q.r&&dmgTo(ti,s.dmg,false,i)>0){q.stun=Math.max(q.stun,1.3);pop(q,'اتجمّد في الإطار','#7ee8c9')}})},
- blitz(i,s,e){const n=e.haste>0?5:3;for(let k=0;k<n;k++)later(k*.17,()=>{const ti=getTarget(i),q=G.p[ti];if(e.hp<=0||!q||q.hp<=0)return;
-   const a=Math.random()*6.28;e.x=q.x+Math.cos(a)*50;e.y=q.y+Math.sin(a)*50;clampA(e);e.face=q.x>e.x?1:-1;e.dx=0;e.dy=0;e.dash=.14;
-   slashFx(q.x,q.y,'#bff7ea',3,48);G.shk=.1;dmgTo(ti,s.dmg,false,i)})},
- rain(i,s,e,t){const ti=getTarget(i);for(let n=0;n<5;n++){const ox=t.x+(n?(Math.random()-.5)*150:0),oy=t.y+(n?(Math.random()-.5)*150:0);
-   later(n*.2,()=>mark(ox,oy,50,.45,'#7ee8c9',1));
-   later(.45+n*.2,()=>{const q=G.p[ti];if(!q||q.hp<=0)return;slashFx(ox,oy,'#bff7ea',3,45);if(D(q,{x:ox,y:oy})<50+q.r&&dmgTo(ti,s.dmg,false,i)>0)q.stun=Math.max(q.stun,.5)})}},
+     if(D(q,{x:ox,y:oy})<62+q.r&&dmgTo(ti,s.dmg,false,i)>0){q.stun=Math.max(q.stun,1.5);q.naoyaGrabbed=true;pop(q,'مُجمّد في الإطار (جاهز للقبض)!','#7ee8c9')}})},
 
- /* ===== مهارات توجي فوشيغورو (معدلة للسرعة العالية) ===== */
+ /* 3. مطر الإطارات: القبض على الخصم المجمد والتحرك به لتكسيره في الإطارات المحيطة */
+ rainFrames(i,s,e){
+   const ti=getTarget(i), q=G.p[ti];
+   if(!q || !q.naoyaGrabbed){
+     pop(e,'يجب تجميد الخصم أولاً!','#ff4d5e');
+     return;
+   }
+   q.naoyaGrabbed = false;
+   pop(e,'مطر الإطارات: تكسير دموي!','#7ee8c9');
+   // تكسير الخصم في جدران الحلبة/الإطارات المحيطة
+   for(let k=0; k<3; k++){
+     later(k*0.15,()=>{
+       e.x = (Math.random()-.5)*300; e.y = (Math.random()-.5)*300; clampA(e);
+       q.x = e.x + 40; q.y = e.y; clampA(q);
+       slashFx(q.x,q.y,'#7ee8c9',5,65);
+       G.shk=.2;
+       dmgTo(ti, Math.round(s.dmg * 0.4), true, i);
+     });
+   }
+   e.haste = 6; // زيادة سرعة خارقة بعد مطر الإطارات
+ },
+
+ /* ===== مهارات توجي (AOE واسع جداً للسلسلة) ===== */
  isoh(i,s,e,t,a){
    const ti=getTarget(i);
    e.x=t.x-Math.cos(a)*46;e.y=t.y-Math.sin(a)*46;clampA(e);
    e.face=t.x>e.x?1:-1;e.punch=.28;e.wepMode='isoh';
    slashFx(t.x,t.y,'#38bdf8',4,58);ring(t.x,t.y,'#e2e8f0',70);G.shk=.22;
    t.bl=0;t.blue=0;t.haste=0;
-   if(dmgTo(ti,s.dmg,true,i)>0){
-     t.stun=Math.max(t.stun,.65);
-     pop(t,'إلغاء التقنية! 🗡️','#38bdf8');
-   }
+   if(dmgTo(ti,s.dmg,true,i)>0){t.stun=Math.max(t.stun,.65);pop(t,'إلغاء التقنية! 🗡️','#38bdf8')}
  },
- /* كاتانا شق الروح: داش قطعي واسع لا يمكن تفاديه مع الحركة السريعة */
  ssk(i,s,e,t,a){
    e.punch=.3;e.wepMode='ssk';
-   // اندفاع سريع جداً باتجاه الخصم مع مساحة ضرب واسعة
    const dashDist=130;
    e.x+=Math.cos(a)*dashDist; e.y+=Math.sin(a)*dashDist;
    clampA(e);
@@ -67,16 +94,17 @@ const SP={
      }
    });
  },
- /* سلسلة الألف ميل: مقذوف فائق السرعة وبحجم كبير جداً لصيد الحركة السريعة */
+ /* سلسلة الألف ميل: بـ AOE عملاق جداً وحجم مساحة واسعة */
  chain(i,s,e,t,a){
    e.wepMode='isoh';
    G.s.push({
      o:i,k:2,x:e.x,y:e.y,
-     vx:Math.cos(a)*1350, vy:Math.sin(a)*1350,
-     dmg:s.dmg, col:'#e2e8f0', life:1.2,
-     big:1, sz:35, blade:1, ang:a, chainWhip:1
+     vx:Math.cos(a)*1400, vy:Math.sin(a)*1400,
+     dmg:s.dmg, col:'#e2e8f0', life:1.3,
+     big:1, sz:85, // AOE ضخم جداً لا يمكن تفاديه
+     blade:1, ang:a, chainWhip:1
    });
-   G.shk=.22;
+   G.shk=.25;
  }
 };
 
@@ -103,8 +131,13 @@ CH.suk.sk[0]={n:'تفكيك',t:'special',sx:'dis',cd:4.5,dmg:68};
 CH.suk.sk[2]={n:'فوغا',t:'special',sx:'fuga',cd:9,dmg:290,ex:110,u:{dmg:500,ex:190}};
 CH.kashimo.sk=[{n:'برق خاطف',t:'special',sx:'bolt',cd:5,dmg:140},{n:'مجال صاعق',t:'special',sx:'field',cd:8,dmg:52},{n:'عاصفة رعدية',t:'special',sx:'storm',cd:9,dmg:110}];
 
+/* تعديل مهارات ناويه زينين بالضبط حسب الطلب */
 CH.naoya={n:'ناويه زينين',style:'naoya',hp:9500,col:'#f5d547',sp:215,rng:120,
-  sk:[{n:'إطار الزجاج',t:'special',sx:'glass',cd:10,dmg:85,dur:5},{n:'تجميد الإطار',t:'special',sx:'frames',cd:7,dmg:105},{n:'مطر الإطارات',t:'special',sx:'rain',cd:9,dmg:60}],
+  sk:[
+    {n:'إطار زجاجي',t:'special',sx:'glassFrames',cd:8,dmg:75,dur:7},
+    {n:'تجميد الإطار',t:'special',sx:'frames',cd:6,dmg:95},
+    {n:'مطر الإطارات',t:'special',sx:'rainFrames',cd:7,dmg:130}
+  ],
   dom:{n:'مسار الـ24 إطار',type:'shrine',tick:.25,dmg:52,dur:7}};
 
 CH.toji={n:'توجي فوشيغورو',style:'toji',noCE:true,hp:10500,col:'#a855f7',sp:235,rng:95,
@@ -137,7 +170,8 @@ use=function(i,k,tx,ty){
 const _dmg=dmgTo;
 dmgTo=function(i,d,sure,attIdx){
   const sIdx=attIdx!==undefined?attIdx:getTarget(i);
-  if(G&&G.p[sIdx]&&G.p[sIdx].haste>0)d*=1.35;
+  const attacker = G && G.p[sIdx];
+  if(attacker && attacker.haste>0) d *= 1.3; // دعم دمج 30% إضافي عند تفعيل السرعة القصوى
   return _dmg(i,d,sure,attIdx)
 };
 
@@ -158,6 +192,23 @@ boom=function(s){
 const _step=step;
 step=function(dt){if(!isFinite(M.v[0])||!isFinite(M.v[1]))M.v=[0,0];_step(dt);if(!G||G.st!=='play')return;
   G.p.forEach(q=>{q.bzcd=Math.max(0,(q.bzcd||0)-dt)});G.Gh=(G.Gh||[]).filter(o=>(o.t-=dt)>0);
+  
+  /* فحص تكسير إطارات ناويه الزجاجية عند مرور الشخصيات عليها */
+  if(G.naoyaFrames){
+    G.naoyaFrames.forEach(fr=>{
+      if(!fr.broken){
+        G.p.forEach((p,pIdx)=>{
+          if(p.hp>0 && Math.hypot(p.x - fr.x, p.y - fr.y) < p.r + fr.r){
+            fr.broken = true;
+            slashFx(fr.x, fr.y, '#7ee8c9', 4, 45);
+            p.haste = Math.max(p.haste||0, 2.5); // زيادة السرعة عند تكسير إطار
+            pop(p, 'إطار مُكسّر! +سرعة', '#7ee8c9');
+          }
+        });
+      }
+    });
+  }
+
   {const a=G.p[0],bz=CH[a.k].bz,bb=document.getElementById('bblz');if(bb)bb.firstChild.style.transform='scaleY('+Math.min(1,a.bzcd/(bz?bz.cd:11))+')';
    for(let idx=1;idx<G.p.length;idx++){
      const o=G.p[idx];if(!o||o.hp<=0)continue;
@@ -221,6 +272,19 @@ function drawTojiWeapons(e,f,sc,hx,hy2,bx,by){
 function overlays(){
   (G.Gh||[]).forEach(o=>{g.save();g.globalAlpha=Math.max(0,o.t/.35)*.5;g.fillStyle=o.c;g.beginPath();g.ellipse(X(o.x),Y(o.y),10*S,26*S,0,0,7);g.fill();g.restore()});
   (G.Z||[]).forEach(z=>{g.save();g.globalAlpha=z.w>0?.2:.3+.12*Math.sin(G.t*20);g.fillStyle=z.c;g.beginPath();g.arc(X(z.x),Y(z.y),z.r*S,0,7);g.fill();g.globalAlpha=.9;g.strokeStyle=z.c;g.lineWidth=2;g.stroke();g.restore()});
+  
+  /* رسم إطارات ناويه الزجاجية المحيطة بالحلبة على الشاشة */
+  if(G.naoyaFrames){
+    G.naoyaFrames.forEach(fr=>{
+      if(!fr.broken){
+        g.save();
+        g.strokeStyle='#7ee8c9';g.lineWidth=3;g.fillStyle='rgba(126,232,201,0.15)';
+        g.beginPath();g.arc(X(fr.x), Y(fr.y), fr.r*S, 0, 7);g.fill();g.stroke();
+        g.restore();
+      }
+    });
+  }
+
   (G.M||[]).forEach(m=>{const mx=X(m.o?m.o.x:m.x),my=Y(m.o?m.o.y:m.y),r=m.r*S;g.save();g.strokeStyle=m.c;g.fillStyle=m.c;
     if(m.sq){const k=1-.25*(1-m.t/m.tot);g.globalAlpha=.16;g.fillRect(mx-r,my-r,2*r,2*r);g.globalAlpha=.95;g.lineWidth=3;g.strokeRect(mx-r*k,my-r*k,2*r*k,2*r*k);g.globalAlpha=.4;g.lineWidth=1.5;g.beginPath();g.moveTo(mx-r*k,my-r*k);g.lineTo(mx+r*k,my+r*k);g.moveTo(mx+r*k,my-r*k);g.lineTo(mx-r*k,my+r*k);g.stroke()}
     else{g.lineWidth=2.5;g.setLineDash([5,4]);g.beginPath();g.arc(mx,my,r,0,7);g.stroke();g.setLineDash([]);g.globalAlpha=.3;g.beginPath();g.arc(mx,my,r*(1-m.t/m.tot),0,7);g.fill()}
@@ -266,56 +330,4 @@ drawStickman=function(e){
   if(e.k==='kashimo'){g.strokeStyle='#d6455d';g.lineWidth=1.4*sc;ln(-5*sc,hy-3*sc,3*sc,hy+4*sc);
     g.strokeStyle='#8ad0ff';g.lineWidth=1.6*sc;g.beginPath();for(let n=0;n<2;n++){const sx=(Math.random()-.5)*34*sc,sy=(Math.random()-.5)*50*sc;g.moveTo(sx,sy);g.lineTo(sx+(Math.random()-.5)*10*sc,sy+(Math.random()-.5)*10*sc)}g.stroke()}
   g.restore()};
-
-const _buildActionButtons=buildActionButtons;
-buildActionButtons=function(k){
-  _buildActionButtons(k);
-  const b=document.createElement('button');b.className='b';b.id='bblz';b.style.borderColor='#c084fc';
-  b.innerHTML='<i></i><span>'+(CH[k].bz?CH[k].bz.n:'اندفاع 24 إطار')+'</span>';
-  b.addEventListener('pointerdown',e=>{e.preventDefault();use(0,'blz')});
-  BT.insertBefore(b,document.getElementById('bdash'));
-  applyLayout();
-};
-addEventListener('keydown',e=>{if(e.key==='z')use(0,'blz')});
-
-let camOn=false;
-const _draw=draw;
-draw=function(t){
-  if(G){camOn=true;
-    const alive=G.p.filter(x=>x.hp>0);
-    if(alive.length){
-      let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
-      alive.forEach(p=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y)});
-      const mx=(minX+maxX)/2,my=(minY+maxY)/2,wide=W>H;
-      const ts=Math.min(W*.92/Math.max(660,(maxX-minX)+280),(wide?H*.66:H*.6)/Math.max(440,(maxY-minY)+240));
-      const c=G.cam=G.cam||{x:mx,y:my,s:ts};c.x+=(mx-c.x)*.15;c.y+=(my-c.y)*.15;c.s+=(ts-c.s)*.1;
-      S=c.s;cx=W/2-c.x*S;cy=(wide?H*.55:H*.38)-c.y*S;
-    }
-  }
-  else if(camOn){camOn=false;rs()}
-  _draw(t)};
-
-const BG=Array.from({length:70},()=>({x:Math.random(),y:Math.random(),z:1+Math.random()*1.6,f:1+Math.random()*2,p:Math.random()*6}));
-drawArena=function(){
-  const T=G?G.t:performance.now()/1000,R=A*S,ox=X(0),oy=Y(0);
-  const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#04061a');bg.addColorStop(1,'#0b1033');g.fillStyle=bg;g.fillRect(-20,-20,W+40,H+40);
-  g.fillStyle='#9fb4ff';BG.forEach(q=>{g.globalAlpha=.2+.4*Math.abs(Math.sin(T*q.f+q.p));g.fillRect(((q.x*W-cx*.06)%W+W)%W,((q.y*H-cy*.06)%H+H)%H,q.z,q.z)});g.globalAlpha=1;
-  g.save();g.shadowColor='#4fc3ff';g.shadowBlur=30;g.beginPath();g.arc(ox,oy,R+10*S,0,7);g.fillStyle='#0a0e33';g.fill();g.restore();
-  const fl=g.createRadialGradient(ox,oy,R*.05,ox,oy,R);fl.addColorStop(0,'#232d7e');fl.addColorStop(.55,'#141a55');fl.addColorStop(1,'#080b2b');
-  g.beginPath();g.arc(ox,oy,R,0,7);g.fillStyle=fl;g.fill();
-  g.save();g.beginPath();g.arc(ox,oy,R,0,7);g.clip();
-  g.strokeStyle='rgba(130,160,255,.09)';g.lineWidth=1;g.beginPath();
-  for(let k=-A;k<=A;k+=60){g.moveTo(X(k),Y(-A));g.lineTo(X(k),Y(A));g.moveTo(X(-A),Y(k));g.lineTo(X(A),Y(k))}g.stroke();
-  [.22,.42,.62,.82].forEach((r,n)=>{g.strokeStyle='rgba(79,195,255,.28)';g.lineWidth=2.5;g.setLineDash([R*r*.1,R*r*.07]);g.lineDashOffset=T*26*(n%2?-1:1);g.beginPath();g.arc(ox,oy,R*r,0,7);g.stroke()});
-  g.setLineDash([]);
-  g.strokeStyle='rgba(120,140,255,.35)';g.lineWidth=2;for(let n=0;n<8;n++){const ag=T*.15+n*Math.PI/4;g.beginPath();g.moveTo(ox+Math.cos(ag)*R*.1,oy+Math.sin(ag)*R*.1);g.lineTo(ox+Math.cos(ag)*R*.2,oy+Math.sin(ag)*R*.2);g.stroke()}
-  g.strokeStyle='rgba(79,195,255,.5)';g.lineWidth=3;g.beginPath();g.arc(ox,oy,R*.1,0,7);g.stroke();
-  g.fillStyle='rgba(120,150,255,.5)';for(let n=0;n<72;n++){const ag=n*Math.PI/36,r1=R*.9,l=n%3?R*.015:R*.03;g.beginPath();g.moveTo(ox+Math.cos(ag)*r1,oy+Math.sin(ag)*r1);g.lineTo(ox+Math.cos(ag)*(r1+l),oy+Math.sin(ag)*(r1+l));g.lineWidth=2;g.strokeStyle='rgba(120,150,255,.45)';g.stroke()}
-  g.restore();
-  g.save();g.shadowColor='#4fc3ff';g.shadowBlur=20;g.beginPath();g.arc(ox,oy,R,0,7);g.lineWidth=6;g.strokeStyle='#3e4fd0';g.stroke();g.restore();
-  g.beginPath();g.arc(ox,oy,R+14*S,0,7);g.lineWidth=2;g.strokeStyle='rgba(79,195,255,.25isComposite)'?'' : '';g.stroke();
-  for(let n=0;n<24;n++){const ag=n*Math.PI/12,px=ox+Math.cos(ag)*(R+14*S),py=oy+Math.sin(ag)*(R+14*S),pl=.6+.4*Math.sin(T*3+n);
-    g.save();g.shadowColor='#4fc3ff';g.shadowBlur=12;g.globalAlpha=.5+.5*pl;g.fillStyle='#8fd8ff';g.beginPath();g.moveTo(px,py-9*S);g.lineTo(px+5*S,py);g.lineTo(px,py+9*S);g.lineTo(px-5*S,py);g.closePath();g.fill();g.restore()}
-};
-if(!G)menu();
 })();
