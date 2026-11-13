@@ -61,20 +61,27 @@ CH.suk.bz={n:'تقطيع متتالي',cd:11,hits:4,dmg:30,col:'#ff4d5e',fx:'cut
 CH.kashimo.bz={n:'برق متتالي',cd:11,hits:4,dmg:26,col:'#60a5fa',fx:'bolt',stunEnd:.5};
 CH.naoya.bz={n:'اندفاع 24 إطار',cd:9,hits:3,dmg:30,col:'#7ee8c9',fx:'frame'};
 /* توجي: ملوش طاقة ملعونة ولا مجال ولا تقنية. مهاراته سلاح ومجهود جسدي بس */
-CH.toji={n:'توجي',style:'toji',hp:Math.round(1350*HP_MULT),col:'#c9d3e6',sp:205,rng:125,
-  sk:[{n:'قطع مزدوج',t:'slash',cd:2.2,dmg:30,cnt:2,v:640,col:'#e6edf8'},
-      {n:'ضربة الأرض',t:'cleave',cd:4,dmg:70,r:80},
-      {n:'رمية الكاتانا',t:'orb',cd:6,dmg:80,ex:70,v:420,bn:0,col:'#c9d3e6',u:{dmg:150,ex:120}}],
+CH.toji={n:'توجي',style:'toji',hp:Math.round(1400*HP_MULT),col:'#c9d3e6',sp:215,rng:140,
+  sk:[{n:'رمح العكس',t:'beam',cd:4.5,dmg:120,w:42,col:'#e8eef8'},
+      {n:'قطع الكاتانا',t:'slash',cd:2.4,dmg:42,cnt:4,v:700,col:'#dfe7f5'},
+      {n:'رمية الرمح',t:'orb',cd:7,dmg:115,ex:85,v:460,bn:0,col:'#c9d3e6',u:{dmg:210,ex:140}}],
   dom:{n:'ضربة الكاتانا',type:'none',tick:1,dmg:0,dur:0},
-  bz:{n:'ضربات السيفين',cd:10,hits:4,dmg:26,col:'#c9d3e6',fx:'cut'},
-  noDom:true,domLabel:'ضربة الكاتانا'};
+  bz:{n:'ضربات السيفين',cd:10,hits:5,dmg:28,col:'#c9d3e6',fx:'cut'},
+  noDom:true,domLabel:'ضربة الكاتانا',noHeal:true,healLabel:'بدون طاقة'};
+/* ===== ضبط الماتش: الدم كبير، والمجال نادر، والضرر قابل للتعديل ===== */
+const HP_BIG=32000;/* الدم لكل الشخصيات */
+const DOM_CD=60;/* ثواني بين كل مجال والتاني */
+const DMG_MULT=1;/* لو عايز الماتش أسرع زوّده (مثلاً 1.5)، ولو أطول قلله (مثلاً 0.7) */
+/* دم مختلف لكل شخصية، كلهم فوق 30000 */
+const HP_TABLE={gojo:36000,suk:34000,kashimo:31000,naoya:33000,toji:35000};
+Object.keys(CH).forEach(k=>{CH[k].hp=HP_TABLE[k]||HP_BIG});
 
 /* ===== ربط المهارات الخاصة باللعبة ===== */
 const _use=use;
 use=function(i,k,tx,ty){
   if(!isFinite(tx)||!isFinite(ty)){tx=undefined;ty=undefined}
   if(k==='blz'){if(G&&G.st==='play')doBlz(i);return}
-  if(k==='rct'&&G&&G.st==='play'){const e=G.p[i],h=e.hp;_use(i,k,tx,ty);if(e.hp>h)e.hp=Math.min(e.max,e.hp+250*(HP_MULT-1));return}
+  if(k==='rct'&&G&&G.st==='play'){const e=G.p[i],h=e.hp;_use(i,k,tx,ty);if(e.hp>h)e.hp=Math.min(e.max,e.hp+e.max*.1);return}
   if(G&&G.st==='play'&&typeof k==='number'){const e=G.p[i],s=CH[e.k].sk[k];
     if(s&&s.t==='special'){
       if(e.stun>0||e.dc>0||e.cd[k]>0||(s.need&&e.pur<=0))return;
@@ -90,7 +97,7 @@ boom=function(s){const t=G.p[1-s.o],h=t.hp;
   _boom(s);
   if(s.rep&&t.hp<h){const a=Math.atan2(t.y-s.y,t.x-s.x);t.kx+=Math.cos(a)*1000;t.ky+=Math.sin(a)*1000;t.slam=1}};
 const _step=step;
-step=function(dt){if(!isFinite(M.v[0])||!isFinite(M.v[1]))M.v=[0,0];_step(dt);if(!G||G.st!=='play')return;
+step=function(dt){if(!isFinite(M.v[0])||!isFinite(M.v[1]))M.v=[0,0];_step(dt);if(!G||G.st!=='play')return;G.p.forEach(q=>{q.domcd=Math.max(0,(q.domcd||0)-dt)});
   G.p.forEach(q=>{q.bzcd=Math.max(0,(q.bzcd||0)-dt)});G.Gh=(G.Gh||[]).filter(o=>(o.t-=dt)>0);
   {const a=G.p[0],bz=CH[a.k].bz,bb=document.getElementById('bblz');if(bb)bb.firstChild.style.transform='scaleY('+Math.min(1,a.bzcd/(bz?bz.cd:11))+')';
    const o=G.p[1];if(!(o.bzcd>0)&&o.stun<=0&&o.dc<=0&&D(o,a)<280&&Math.random()<.01+DIFF*.02)use(1,'blz')}
@@ -104,8 +111,8 @@ const PAL={naoya:{hair:'#ecd773',skin:'#ffe0c8',coat:'#3a2f2a',acc:'#7ee8c9',eye
 const HR={naoya:[[-9,1],[-10,-7],[-4,-10],[3,-13],[10,-9],[11,0],[9,-3],[4,-6],[-2,-7],[-7,-5]],gojo:[[-9,-1],[-12,-9],[-6,-7],[-6,-15],[-1,-9],[3,-16],[5,-8],[12,-11],[9,-1],[5,-5],[1,-3],[-3,-5],[-6,-3]],
  suk:[[-9,0],[-11,-8],[-5,-7],[-3,-14],[1,-8],[6,-13],[7,-6],[12,-7],[9,0],[5,-4],[0,-2],[-5,-4]],
  kashimo:[[-9,7],[-11,-6],[-6,-9],[-2,-15],[3,-10],[8,-14],[10,-6],[10,7],[8,-1],[3,-4],[-2,-2],[-6,-4],[-8,2]]};
-PAL.toji={hair:'#17171d',skin:'#f0cdb0',coat:'#15171f',acc:'#eef2f8',eye:'#222630'};
-HR.toji=[[-9,0],[-10,-6],[-7,-11],[-3,-9],[-1,-16],[3,-12],[6,-16],[9,-9],[10,-3],[8,1],[4,-3],[0,-4],[-4,-2]];
+PAL.toji={hair:'#12121a',skin:'#e9bfa0',coat:'#23262f',acc:'#9aa3b5',eye:'#222630'};
+HR.toji=[[-10,1],[-11,-5],[-8,-10],[-4,-7],[-2,-15],[2,-11],[5,-16],[9,-9],[11,-2],[8,2],[4,-2],[0,-3],[-5,-1]];
 const ln=(x1,y1,x2,y2)=>{g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke()};
 function overlays(){
   (G.Gh||[]).forEach(o=>{g.save();g.globalAlpha=Math.max(0,o.t/.35)*.5;g.fillStyle=o.c;g.beginPath();g.ellipse(X(o.x),Y(o.y),10*S,26*S,0,0,7);g.fill();g.restore()});
@@ -149,15 +156,15 @@ drawStickman=function(e){
   if(e.k==='kashimo'){g.strokeStyle='#d6455d';g.lineWidth=1.4*sc;ln(-5*sc,hy-3*sc,3*sc,hy+4*sc);
     g.strokeStyle='#8ad0ff';g.lineWidth=1.6*sc;g.beginPath();for(let n=0;n<2;n++){const sx=(Math.random()-.5)*34*sc,sy=(Math.random()-.5)*50*sc;g.moveTo(sx,sy);g.lineTo(sx+(Math.random()-.5)*10*sc,sy+(Math.random()-.5)*10*sc)}g.stroke()}
   if(e.k==='toji'){
-    // سيفين توجي: كاتانا في إيده وكاتانا على ضهره (Split Soul Katana)
+    // توجي ماسك الاتنين: الرمح المعكوس في الشمال، والكاتانا المقسومة في اليمين
     g.lineCap='round';
-    g.strokeStyle='#dfe7f5';g.lineWidth=2.4*sc;ln(-f*3*sc,-11*sc,-f*14*sc,-33*sc);
-    g.strokeStyle='#14151c';g.lineWidth=3*sc;ln(-f*3*sc,-11*sc,-f*0.5*sc,-6*sc);
-    g.strokeStyle='#dfe7f5';g.lineWidth=2.8*sc;ln(hx,hy2,hx+f*28*sc,hy2-24*sc);
-    g.strokeStyle='#14151c';g.lineWidth=3.4*sc;ln(hx,hy2,hx-f*4*sc,hy2+3*sc);
-    g.strokeStyle='#8a94a8';g.lineWidth=1.8*sc;ln(hx-f*2*sc,hy2+1.5*sc,hx-f*5*sc,hy2-2.5*sc);
-    // نظارة شمس توجي
-    g.fillStyle='#050608';g.fillRect(-7*sc,hy-1.5*sc,14*sc,4*sc);
+    g.strokeStyle='#2a2330';g.lineWidth=2.6*sc;ln(bx,by,bx-f*2*sc,hy-30*sc);
+    g.strokeStyle='#e8eef8';g.lineWidth=3.2*sc;ln(bx-f*2*sc,hy-30*sc,bx-f*2.8*sc,hy-40*sc);
+    g.strokeStyle='#14151c';g.lineWidth=3.2*sc;ln(hx,hy2,hx-f*4*sc,hy2+3*sc);
+    g.strokeStyle='#dfe7f5';g.lineWidth=3*sc;ln(hx+f*2*sc,hy2-2*sc,hx+f*30*sc,hy2-24*sc);
+    g.fillStyle='#e9e4dc';g.beginPath();g.arc(hx+f*2*sc,hy2-2*sc,3.2*sc,0,7);g.fill();
+    // كتافة توجي العضلية (زي الصورة، من غير نظارة)
+    g.fillStyle='#2b2e38';g.beginPath();g.arc(-8.5*sc,-7*sc,4.8*sc,0,7);g.arc(8.5*sc,-7*sc,4.8*sc,0,7);g.fill();
   }
   g.restore()};
 /* ===== زر اندفاع الـ24 إطار ===== */
@@ -231,7 +238,7 @@ menu=function(){G=null;ui('ساحة القتال - Anime 2D','اختار من ا
 
 /* ===== توجي: مفيش مجال، فالزر بتاعه بيبقى "ضربة الكاتانا" ===== */
 const _start3=start;
-start=function(k){_start3(k);const d=CH[k].noDom&&document.getElementById('bdom');if(d)d.querySelector('span').textContent=CH[k].domLabel};
+start=function(k){_start3(k);if(CH[k].noDom){const d=document.getElementById('bdom'),h=document.getElementById('brct');if(d)d.querySelector('span').textContent=CH[k].domLabel;if(h&&CH[k].noHeal)h.querySelector('span').textContent=CH[k].healLabel}};
 function tojiFin(i){const e=G.p[i],t=G.p[1-i];if(e.dm<DOMCH||e.stun>0||e.dc>0)return;
   e.dm=0;if(i===1)G.bc=G.t;
   const a=Math.atan2(t.y-e.y,t.x-e.x)+Math.PI;
@@ -239,13 +246,54 @@ function tojiFin(i){const e=G.p[i],t=G.p[1-i];if(e.dm<DOMCH||e.stun>0||e.dc>0)re
   e.x=t.x+Math.cos(a)*44;e.y=t.y+Math.sin(a)*44;clampA(e);
   e.face=t.x>e.x?1:-1;e.dash=.12;
   slashFx(t.x,t.y,'#e6edf8',4,60);G.shk=.3;
-  dmgTo(1-i,90,1);G.p[1-i].stun=Math.max(G.p[1-i].stun,.5);pop(e,'ضربة الكاتانا!','#e6edf8')}
+  dmgTo(1-i,120,1);G.p[1-i].stun=Math.max(G.p[1-i].stun,.5);pop(e,'ضربة الكاتانا!','#e6edf8')}
 const _use4=use;
-use=function(i,k,tx,ty){if(k==='dom'&&G&&G.st==='play'&&CH[G.p[i].k].noDom){tojiFin(i);return}return _use4(i,k,tx,ty)};
+use=function(i,k,tx,ty){if(G&&G.st==='play'){const e=G.p[i],c=CH[e.k],o=G.p[1-i];
+  if(k==='dom'&&c.noDom){tojiFin(i);return}
+  if(k==='rct'&&c.noHeal)return;
+  if(k==='dom'&&e.domcd>0)return;
+  /* الرمح المعكوس: أي تقنية ملعونة (مجال أو خاصة) الخصم بيستخدمها ضد توجي بتتبطل */
+  if(o&&o.k==='toji'&&!c.noDom){if(k==='dom')return;if(typeof k==='number'&&c.sk[k]&&c.sk[k].t==='special')return}
+  const was=e.dc,r=_use4(i,k,tx,ty);
+  if(k==='dom'&&e.dc>0&&!(was>0))e.domcd=DOM_CD;
+  return r}
+  return _use4(i,k,tx,ty)};
 
 /* ===== توجي: القيد السماوي، ضرره الجسدي +15% ===== */
 const _dmgT=dmgTo;
-dmgTo=function(i,d,sure){if(G&&G.p[1-i]&&G.p[1-i].k==='toji')d*=1.15;return _dmgT(i,d,sure)};
+dmgTo=function(i,d,sure){if(G&&G.p[1-i]&&G.p[1-i].k==='toji')d*=1.15;return _dmgT(i,d*DMG_MULT,sure)};
 
+/* ===== تأثيرات الضربات الفاخرة: شرارات ولمعان وقوس قطع ===== */
+const SPK=[];
+function burst(x,y,c,dmg){const n=Math.min(18,6+Math.floor((dmg||30)/12));
+  for(let k=0;k<n&&SPK.length<260;k++){const a=Math.random()*6.28,v=80+Math.random()*220;
+    SPK.push({k:'s',x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:.35+Math.random()*.25,c,r:1.5+Math.random()*2.5})}
+  SPK.push({k:'f',x,y,t:0,life:.22,c,r:(dmg||30)*.5+18});
+  SPK.push({k:'a',x,y,t:0,life:.3,c,r:(dmg||30)*.4+26,a:Math.random()*6.28})}
+const _slashFx2=slashFx;
+slashFx=function(x,y,c,cnt=4,sz=45){_slashFx2(x,y,c,cnt,sz);
+  for(let k=0;k<cnt;k++){const a=Math.random()*6.28;SPK.push({k:'a',x,y,t:0,life:.25,c,r:sz*.9+k*6,a})}}
+const _dmgF=dmgTo;
+dmgTo=function(i,d,sure){const r=_dmgF(i,d,sure);if(r>0&&G&&G.p[i])burst(G.p[i].x,G.p[i].y,r>=60?'#ffd166':(G.p[1-i]&&G.p[1-i].k==='toji'?'#dfe7f5':'#ffffff'),r);return r};
+const _draw2=draw;
+draw=function(t){_draw2(t);
+  if(!SPK.length||!g)return;
+  const dt=1/60;g.save();g.globalCompositeOperation='lighter';
+  for(let i=SPK.length-1;i>=0;i--){const p=SPK[i];p.t+=dt;if(p.t>=p.life){SPK.splice(i,1);continue}
+    const q=1-p.t/p.life;
+    if(p.k==='s'){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.9;p.vy*=.9;
+      g.globalAlpha=q;g.fillStyle=p.c;g.shadowColor=p.c;g.shadowBlur=10;
+      g.beginPath();g.arc(X(p.x),Y(p.y),p.r*S*1.6*q+.6,0,7);g.fill()}
+    else if(p.k==='f'){const e=p.t/p.life;
+      g.globalAlpha=q*.9;g.strokeStyle=p.c;g.lineWidth=5*S*q+1;g.shadowColor=p.c;g.shadowBlur=18;
+      g.beginPath();g.arc(X(p.x),Y(p.y),p.r*S*(.3+.7*e),0,7);g.stroke();
+      g.globalAlpha=q*.5;g.fillStyle=p.c;g.beginPath();g.arc(X(p.x),Y(p.y),p.r*S*.35*q,0,7);g.fill()}
+    else{const e=p.t/p.life;
+      g.globalAlpha=q;g.strokeStyle=p.c;g.lineCap='round';g.shadowColor=p.c;g.shadowBlur=14;
+      const L=p.r*S*(.4+.6*e),ca=Math.cos(p.a),sa=Math.sin(p.a);
+      g.lineWidth=(3.5*q+.5)*S;g.beginPath();g.moveTo(X(p.x-ca*L),Y(p.y-sa*L));g.lineTo(X(p.x+ca*L),Y(p.y+sa*L));g.stroke();
+      g.lineWidth=1.2*S;g.strokeStyle='#ffffff';g.beginPath();g.moveTo(X(p.x-ca*L*.7),Y(p.y-sa*L*.7));g.lineTo(X(p.x+ca*L*.7),Y(p.y+sa*L*.7));g.stroke()}
+  }
+  g.restore()};
 if(!G)menu();
 })();

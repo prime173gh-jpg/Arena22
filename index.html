@@ -58,7 +58,7 @@ const CH={
   dom:{n:'حقل التفريغ الكهربائي',type:'lightning',tick:.25,dmg:32,dur:7}}
 };
 
-const DOMCH=200,ULTCH=300,ULT=10,CLASH=30,CAST=2.2,A=460;
+const DOMCH=9000,ULTCH=300,ULT=10,CLASH=30,CAST=2.2,A=460;
 const TY=['pull','orb','beam','slash','cleave'],DF={pull:{dur:1.5,tick:.125,dmg:15},orb:{v:320,ex:85,bn:0,col:'#ff9a3c'},beam:{w:45,col:'#b86bff'},slash:{cnt:3,v:580},cleave:{r:85}};
 
 function fix(c){try{if(!c||!c.id||!c.n||!(c.hp>0)||!Array.isArray(c.sk)||c.sk.length!==3)return null;
@@ -232,7 +232,7 @@ function bot(dt){const e=G.p[1],p=G.p[0],c=CH[e.k],w=M.w[e.k],L=DIFF;
   
   if(e.stun>0)return;
   if(d<65&&e.m1cd<=0&&Math.random()<.04+L*.08)use(1,'m1');
-  if(e.dm>=DOMCH&&((p.dc>0&&Math.random()<L*.7)||Math.random()<.015))use(1,'dom');
+  if(e.dm>=DOMCH&&((p.dc>0&&Math.random()<L*.7)||Math.random()<.003))use(1,'dom');
   if(e.ut>=ULTCH&&d<420&&Math.random()<.03)use(1,'ult');
   if(e.hp<e.max*.35&&d>220&&Math.random()<.03)use(1,'rct');
   
@@ -502,6 +502,6 @@ addEventListener('keyup',e=>keys[e.key]=false);
 try{navigator.serviceWorker&&navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 rs();menu();requestAnimationFrame(draw);
 </script>
-<script src="mods.js?v=5"></script>
+<script src="mods.js?v=8"></script>
 </body>
 </html>
