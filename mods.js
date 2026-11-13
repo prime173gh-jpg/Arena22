@@ -9,7 +9,7 @@ const clampA=e=>{const r=Math.hypot(e.x,e.y),m=A-e.r;if(r>m){e.x*=m/r;e.y*=m/r}}
 
 /* ===== المهارات الخاصة (sx في بيانات الشخصية بيشاور عليها) ===== */
 const SP={
- red(i,s,e,t,a){G.s.push({o:i,k:1,x:e.x,y:e.y,vx:Math.cos(a)*s.v,vy:Math.sin(a)*s.v,dmg:s.dmg,ex:s.ex,bn:0,col:'#ff3b4f',life:2.5,big:1,sz:s.ex*.16,rep:1})},
+ red(i,s,e,t,a){e.lr=G.t;if(e.blue>0)e.pur=4;G.s.push({o:i,k:1,x:e.x,y:e.y,vx:Math.cos(a)*s.v,vy:Math.sin(a)*s.v,dmg:s.dmg,ex:s.ex,bn:0,col:'#ff3b4f',life:2.5,big:1,sz:s.ex*.16,rep:1})},
  dis(i,s,e,t){for(let n=0;n<5;n++){const ox=t.x+(Math.random()-.5)*90,oy=t.y+(Math.random()-.5)*90,dl=.4+n*.12;
    mark(ox,oy,48,dl,'#ff9aa8');
    later(dl,()=>{const q=G.p[1-i];slashFx(ox,oy,'#ff4d5e',2,52);G.shk=.1;if(D(q,{x:ox,y:oy})<48+q.r)dmgTo(1-i,s.dmg)})}},
@@ -52,6 +52,8 @@ CH.kashimo.sk=[{n:'برق خاطف',t:'special',sx:'bolt',cd:5,dmg:70},{n:'مج�
 CH.naoya={n:'ناويه زينين',style:'naoya',hp:1400,col:'#f5d547',sp:215,rng:120,
   sk:[{n:'إطار الزجاج',t:'special',sx:'glass',cd:10,dmg:40,dur:5},{n:'تجميد الإطار',t:'special',sx:'frames',cd:7,dmg:50},{n:'اندفاع 24 إطار',t:'special',sx:'blitz',cd:8,dmg:30}],
   dom:{n:'مسار الـ24 إطار',type:'shrine',tick:.25,dmg:26,dur:7}};
+const HP_MULT=2.5;/* غيّر الرقم ده عشان تطوّل أو تقصّر الماتش */
+['gojo','suk','kashimo','naoya'].forEach(k=>{CH[k].hp=Math.round(CH[k].hp*HP_MULT)});
 CH.naoya.sk[2]={n:'مطر الإطارات',t:'special',sx:'rain',cd:9,dmg:28};
 /* اندفاع الـ24 إطار: زر رابع لكل الشخصيات. bz في بيانات الشخصية بيغيّر الاسم والدمج والمؤثرات (fx: cut / step / bolt / frame) */
 CH.gojo.bz={n:'خطوة اللانهاية',cd:11,hits:4,dmg:24,col:'#4fc3ff',fx:'step'};
@@ -64,6 +66,7 @@ const _use=use;
 use=function(i,k,tx,ty){
   if(!isFinite(tx)||!isFinite(ty)){tx=undefined;ty=undefined}
   if(k==='blz'){if(G&&G.st==='play')doBlz(i);return}
+  if(k==='rct'&&G&&G.st==='play'){const e=G.p[i],h=e.hp;_use(i,k,tx,ty);if(e.hp>h)e.hp=Math.min(e.max,e.hp+250*(HP_MULT-1));return}
   if(G&&G.st==='play'&&typeof k==='number'){const e=G.p[i],s=CH[e.k].sk[k];
     if(s&&s.t==='special'){
       if(e.stun>0||e.dc>0||e.cd[k]>0||(s.need&&e.pur<=0))return;
