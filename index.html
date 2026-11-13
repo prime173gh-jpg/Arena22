@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ساحة المعركة - Anime 2D</title>
+<title>ساحة المعركة - Anime 2D LAN</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#090c26">
 <style>
@@ -37,7 +37,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 .diff-row{display:flex;gap:8px;margin-bottom:4px;flex-wrap:wrap;justify-content:center}
 .diff-btn{padding:7px 14px!important;min-width:auto!important;font-size:13px!important;border-radius:14px!important;background:#1b2260!important;color:#fff!important;border:2px solid transparent!important;cursor:pointer}
 .diff-btn.active{border-color:#ffd166!important;background:#2a358c!important;color:#ffd166!important}
-/* شاشة الملتي بلاير */
+/* غرف الـ LAN الحقيقية */
 #mp-rooms{width:min(92vw,440px);background:#101642;border:1.5px solid #2d3b8e;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow-y:auto}
 .room-card{display:flex;justify-content:space-between;align-items:center;background:#18205c;padding:10px 14px;border-radius:12px;border:1px solid #32429e}
 .room-info{text-align:right}
@@ -53,9 +53,8 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 <div id="pad"></div>
 <div id="btns"></div>
 <div id="ov"><h1 id="t"></h1><p id="m"></p><div id="df"></div><textarea id="ta" style="display:none"></textarea><div id="bx"></div></div>
-<button id="mp-host-btn">+ Create / Host</button>
+<button id="mp-host-btn">+ Create / Host LAN</button>
 <script>
-/* ===== الشخصيات بمهارات خاصة وحصرية لكل شخصية ===== */
 const CH={
  gojo:{n:'جوجو',style:'gojo',hp:10000,col:'#4fc3ff',sp:190,rng:230,
   sk:[{n:'أزرق',t:'pull',cd:7,dur:1.6,tick:.125,dmg:35},
@@ -71,12 +70,17 @@ const CH={
   sk:[{n:'صاعقة برق',t:'slash',cd:2.3,dmg:72,cnt:4,v:680,col:'#60a5fa'},
       {n:'صدمة رعدية',t:'cleave',cd:3.8,dmg:155,r:95},
       {n:'برق متسلسل',t:'orb',cd:6.5,dmg:185,ex:95,v:430,bn:1,col:'#9333ea',u:{dmg:350,ex:185}}],
-  dom:{n:'حقل التفريغ الكهربائي',type:'lightning',tick:.25,dmg:58,dur:7}}
+  dom:{n:'حقل التفريغ الكهربائي',type:'lightning',tick:.25,dmg:58,dur:7}},
+ toji:{n:'توجي فوشيغورو',style:'toji',noCE:true,hp:10500,col:'#a855f7',sp:235,rng:95,
+  sk:[{n:'رمح السماء المعكوس',t:'special',sx:'isoh',cd:4.5,dmg:165},
+      {n:'كاتانا شق الروح',t:'special',sx:'ssk',cd:5.5,dmg:215},
+      {n:'سلسلة الألف ميل',t:'special',sx:'chain',cd:4,dmg:160}],
+  dom:{n:'بدون مجال',type:'none',tick:1,dmg:0,dur:0},
+  bz:{n:'انقضاض قاتل السحرة',cd:8.5,hits:5,dmg:62,col:'#c084fc',fx:'cut'}}
 };
 
-/* إبطاء شحن المجال بشكل كبير جداً وزيادة الألتميت ليتناسب مع الهيلث 10,000+ */
 const DOMCH=2200,ULTCH=1200,ULT=10,CLASH=30,CAST=2.2,A=520;
-const TY=['pull','orb','beam','slash','cleave'],DF={pull:{dur:1.5,tick:.125,dmg:30},orb:{v:320,ex:85,bn:0,col:'#ff9a3c'},beam:{w:45,col:'#b86bff'},slash:{cnt:3,v:580},cleave:{r:85}};
+const TY=['pull','orb','beam','slash','cleave','special'],DF={pull:{dur:1.5,tick:.125,dmg:30},orb:{v:320,ex:85,bn:0,col:'#ff9a3c'},beam:{w:45,col:'#b86bff'},slash:{cnt:3,v:580},cleave:{r:85},special:{cd:5,dmg:80}};
 
 function fix(c){try{if(!c||!c.id||!c.n||!(c.hp>0)||!Array.isArray(c.sk)||c.sk.length!==3)return null;
   c.sp=c.sp||180;c.rng=c.rng||150;c.col=c.col||'#ffffff';c.style=c.style||'default';c.dom=Object.assign({n:'مجال',type:'shrine',tick:.5,dmg:50,dur:7},c.dom);
@@ -123,38 +127,34 @@ function ui(t,m,btns,ta,extraFn){
   btns.forEach(([l,f,c])=>{const b=document.createElement('button');b.textContent=l;if(c)b.className=c;b.onclick=f;bx.append(b)})
 }
 
-/* ===== القائمة الرئيسية ===== */
 function menu(){
   G=null;
-  ui('ساحة القتال - Anime 2D','اختر وضع اللعب أو عدّل إعدادات التحكم',
+  ui('ساحة القتال - Anime 2D','اختر وضع اللعب أو الإعدادات',
     [
       ['Start Game',modeSelect,'gold'],
-      ['Multiplayer',multiplayerMenu],
+      ['Multiplayer (LAN)',multiplayerMenu],
       ['Settings',settingsMenu,'s'],
       ['شخصياتي (إضافة / تعديل)',editor,'s']
     ]
   );
 }
 
-/* ===== الإعدادات (تغيير أماكن وحجم الزراير) ===== */
 function settingsMenu(){
-  ui('Settings - الإعدادات','تحكم في مكان وحجم أزرار القتال وعصا الحركة',
-    [
-      ['حفظ ورجوع',menu,'gold']
-    ],undefined,(df)=>{
+  ui('Settings - الإعدادات','تحكم في مكان وحجم أزرار القتال',
+    [['حفظ ورجوع',menu,'gold']],undefined,(df)=>{
       const box=document.createElement('div');
       box.style.cssText='display:flex;flex-direction:column;gap:12px;background:#101642;padding:16px;border-radius:16px;border:1px solid #2b388c;width:min(88vw,360px)';
       box.innerHTML=`
         <div style="font-size:14px;color:#ffd166;font-weight:700">مكان أزرار الهجوم:</div>
         <div class="diff-row">
-          <button class="diff-btn ${CFG.side==='right'?'active':''}" id="s-right">يمين الشاشة (الافتراضي)</button>
-          <button class="diff-btn ${CFG.side==='left'?'active':''}" id="s-left">شمال الشاشة (معكوس)</button>
+          <button class="diff-btn ${CFG.side==='right'?'active':''}" id="s-right">يمين الشاشة</button>
+          <button class="diff-btn ${CFG.side==='left'?'active':''}" id="s-left">شمال الشاشة</button>
         </div>
         <div style="font-size:14px;color:#ffd166;font-weight:700">حجم الزراير: <span id="sc-lbl">${Math.round((CFG.scale||1)*100)}%</span></div>
         <div class="diff-row">
-          <button class="diff-btn ${CFG.scale===0.85?'active':''}" data-sc="0.85">صغير (85%)</button>
-          <button class="diff-btn ${CFG.scale===1?'active':''}" data-sc="1">متوسط (100%)</button>
-          <button class="diff-btn ${CFG.scale===1.2?'active':''}" data-sc="1.2">كبير (120%)</button>
+          <button class="diff-btn ${CFG.scale===0.85?'active':''}" data-sc="0.85">صغير</button>
+          <button class="diff-btn ${CFG.scale===1?'active':''}" data-sc="1">متوسط</button>
+          <button class="diff-btn ${CFG.scale===1.2?'active':''}" data-sc="1.2">كبير</button>
         </div>
       `;
       df.append(box);
@@ -167,7 +167,6 @@ function settingsMenu(){
   );
 }
 
-/* ===== اختيار 1v1 أو 2v2 ===== */
 let SETUP={mode:'1v1',p1:'gojo',ally:'suk',allyDiff:0.45,enemies:['suk'],enemyDiff:0.45};
 
 function modeSelect(){
@@ -217,7 +216,7 @@ function pickMyChar(){
 }
 
 function pickAllyBot(){
-  ui('اختر البوت زميلك في الفريق','حدد الشخصية اللي هتلعب معاك ومستوى ذكائها',
+  ui('اختر البوت زميلك في الفريق','حدد الشخصية ومستوى ذكائها',
     [
       ['التالي: اختيار الخصوم',()=>pickEnemies(),'gold'],
       ['رجوع',pickMyChar,'s']
@@ -236,7 +235,7 @@ function pickEnemies(){
     SETUP.enemies.push(fallback);
   }
   ui(need===2?'اختر الخصمين (2 ضد 2)':'اختر خصمك (1 ضد 1)',
-    need===2?'اضغط على شخصيتين للخصوم وحدد مستوى صعوبتهم':'اختر الشخصية اللي هتواجهها ومستوى صعوبتها',
+    need===2?'اختر شخصيتين للخصوم ومستوى الصعوبة':'اختر الخصم ومستوى الصعوبة',
     [
       ['ابدأ المعركة 🔥',()=>launchMatch(),'gold'],
       ['رجوع',SETUP.mode==='2v2'?pickAllyBot:pickMyChar,'s']
@@ -263,28 +262,36 @@ function launchMatch(){
   }
 }
 
-/* ===== قائمة Multiplayer والغرف ===== */
-let ROOMS=[
-  {id:'RM-101',host:'ساحر_الظلام',mode:'1v1',char:'جوجو',players:'1/2'},
-  {id:'RM-204',host:'ملك_اللعنات',mode:'2v2',char:'سوكونا',players:'2/4'},
-  {id:'RM-309',host:'قاتل_السحرة',mode:'1v1',char:'توجي',players:'1/2'}
-];
+/* ===== نظام LAN حقيقي للـ Multiplayer باستخدام localStorage ===== */
+function getLanRooms(){
+  try{
+    const rooms=JSON.parse(localStorage.getItem('anime_lan_rooms')||'[]');
+    const now=Date.now();
+    // تصفية الغرف القديمة التي مر عليها أكثر من 60 ثانية
+    return rooms.filter(r => (now - r.time) < 60000);
+  }catch(e){return []}
+}
+
+function saveLanRooms(rooms){
+  try{localStorage.setItem('anime_lan_rooms', JSON.stringify(rooms))}catch(e){}
+}
 
 function multiplayerMenu(){
-  ui('Multiplayer - اللعب الجماعي','اختر غرفة من الغرف المتاحة في المنتصف أو أنشئ غرفتك من الزر أسفل اليمين',
+  const rooms=getLanRooms();
+  ui('Multiplayer - غرف شبكة LAN المحلية','الغرف التالية متصلة على نفس شبكتك المحلية أو متصفحك:',
     [
-      ['تحديث الغرف 🔄',multiplayerMenu,'s'],
+      ['بحث وتحديث 🔄',multiplayerMenu,'s'],
       ['رجوع للقائمة',menu,'s']
     ],undefined,(df)=>{
       const box=document.createElement('div');box.id='mp-rooms';
-      if(!ROOMS.length){
-        box.innerHTML='<div style="color:#8a93d8;padding:16px">لا توجد غرف متاحة حالياً</div>';
+      if(!rooms.length){
+        box.innerHTML='<div style="color:#8a93d8;padding:16px">لا توجد غرف LAN نشطة حالياً. أنشئ غرفة من الزر أسفل اليمين!</div>';
       }else{
-        ROOMS.forEach(r=>{
+        rooms.forEach(r=>{
           const row=document.createElement('div');row.className='room-card';
-          row.innerHTML=`<div class="room-info"><b>غرفة ${r.host} (${r.mode})</b><small>الشخصية: ${r.char} • اللاعبين: ${r.players}</small></div>`;
+          row.innerHTML=`<div class="room-info"><b>غرفة: ${r.host} (${r.mode})</b><small>الشخصية: ${r.char}</small></div>`;
           const jb=document.createElement('button');jb.className='room-join';jb.textContent='دخول';
-          jb.onclick=()=>joinRoom(r);
+          jb.onclick=()=>joinLanRoom(r);
           row.append(jb);
           box.append(row);
         });
@@ -293,22 +300,24 @@ function multiplayerMenu(){
     }
   );
   hostBtn.style.display='block';
-  hostBtn.onclick=createRoomMenu;
+  hostBtn.onclick=createLanRoomMenu;
 }
 
-function createRoomMenu(){
-  let rName='غرفة_البطل',rMode='1v1',rChar=CK||'gojo';
+function createLanRoomMenu(){
+  let rName='لاعب_LAN',rMode='1v1',rChar=CK||'gojo';
   const render=()=>{
-    ui('إنشاء غرفة (Create / Host)','اكتب اسم الغرفة واختر المود وشخصيتك',
+    ui('إنشاء غرفة LAN جديدة','اكتب اسمك واختار المود وشخصيتك',
       [
-        ['فتح الغرفة وبدء اللوبي',()=>{
-          const newRoom={id:'RM-'+Math.floor(100+Math.random()*899),host:rName||'لاعب',mode:rMode,char:CH[rChar].n,players:rMode==='2v2'?'1/4':'1/2'};
-          ROOMS.unshift(newRoom);
-          waitingLobby(newRoom,rChar);
+        ['إنشاء وبث الغرفة في الـ LAN',()=>{
+          const rooms=getLanRooms();
+          const newRoom={id:'LAN-'+Math.floor(1000+Math.random()*8999),host:rName||'لاعب LAN',mode:rMode,char:CH[rChar].n,charKey:rChar,time:Date.now()};
+          rooms.push(newRoom);
+          saveLanRooms(rooms);
+          waitingLanLobby(newRoom);
         },'gold'],
         ['إلغاء',multiplayerMenu,'s']
       ],undefined,(df)=>{
-        const inp=document.createElement('input');inp.className='mp-input';inp.value=rName;inp.placeholder='اسم الغرفة';
+        const inp=document.createElement('input');inp.className='mp-input';inp.value=rName;inp.placeholder='اسمك أو اسم الغرفة';
         inp.oninput=e=>rName=e.target.value;
         df.append(inp);
         const mRow=document.createElement('div');mRow.className='diff-row';mRow.style.marginTop='8px';
@@ -324,31 +333,32 @@ function createRoomMenu(){
   render();
 }
 
-function waitingLobby(room,myChar){
-  ui('غرفة: '+room.host+' ('+room.mode+')','في انتظار انضمام اللاعبين... يمكنك بدء المواجهة فوراً أو انتظار خصم',
+function waitingLanLobby(room){
+  ui('غرفة LAN: '+room.host+' ('+room.mode+')','تم إنشاء الغرفة بثها محلياً. يمكنك بدء القتال فوراً أو انتظار الخصم للانضمام',
     [
       ['بدء المعركة الآن ⚡',()=>{
-        SETUP.mode=room.mode;SETUP.p1=myChar;
-        const others=Object.keys(CH).filter(x=>x!==myChar);
+        SETUP.mode=room.mode;SETUP.p1=room.charKey;
+        const others=Object.keys(CH).filter(x=>x!==room.charKey);
         SETUP.ally=others[0]||'suk';
         SETUP.enemies=[others[1]||others[0]||'suk',others[2]||others[0]||'kashimo'];
         launchMatch();
       },'gold'],
-      ['إغلاق الغرفة',()=>{ROOMS=ROOMS.filter(x=>x.id!==room.id);multiplayerMenu()},'s']
+      ['إلغاء الغرفة',()=>{
+        let rooms=getLanRooms().filter(x=>x.id!==room.id);
+        saveLanRooms(rooms);
+        multiplayerMenu();
+      },'s']
     ]
   );
 }
 
-function joinRoom(room){
-  const charKey=Object.keys(CH).find(k=>CH[k].n===room.char)||'gojo';
-  ui('تم الانضمام لغرفة '+room.host,'اختر شخصيتك للدخول في مواجهة '+room.mode,
-    [
-      ['رجوع للغرف',multiplayerMenu,'s']
-    ],undefined,(df)=>{
+function joinLanRoom(room){
+  ui('الانضمام لغرفة LAN','اختر شخصيتك لبدء المعركة ضد '+room.host,
+    [['رجوع',multiplayerMenu,'s']],undefined,(df)=>{
       renderCharGrid(df,[CK],(k)=>{
         SETUP.mode=room.mode;SETUP.p1=k;
         SETUP.ally='gojo';
-        SETUP.enemies=[charKey,Object.keys(CH).find(x=>x!==charKey&&x!==k)||'suk'];
+        SETUP.enemies=[room.charKey,Object.keys(CH).find(x=>x!==room.charKey&&x!==k)||'suk'];
         launchMatch();
       });
     }
@@ -437,7 +447,6 @@ function dmgTo(i,d,sure,attIdx){
     if(!G.clash&&!(s.dom>0))s.dm=Math.min(DOMCH,s.dm+d);
     if(!(s.ult>0))s.ut=Math.min(ULTCH,s.ut+d);
   }else if(s&&CH[s.k].noCE){
-    /* توجي بيشحن الألتميت الجسدي بالضرب بدون طاقة ملعونة */
     if(!(s.ult>0))s.ut=Math.min(ULTCH,s.ut+d*1.15);
   }
   if(!(t.ult>0))t.ut=Math.min(ULTCH,t.ut+d*.4);
@@ -500,7 +509,6 @@ function use(i,k,tx,ty){
   
   if(k==='rct'){
     if(c.noCE){
-      /* توجي معندوش تقنية معكوسة -> بيعمل اندفاع سرعة خارقة */
       if(e.rcd>0)return;
       e.rcd=9;const a=Math.atan2(ay-e.y,ax-e.x);
       e.dash=.24;e.dx=Math.cos(a);e.dy=Math.sin(a);
@@ -599,7 +607,6 @@ function step(dt){if(!G||G.st!=='play')return;G.t+=dt;
       e.dom-=dt;e.dage+=dt;e.dtk-=dt;
       G.p.forEach((foe,fIdx)=>{
         if(foe.hp<=0||foe.team===e.team)return;
-        /* توجي معندوش طاقة ملعونة فـ مجال جوجو مبيجمّدوش بالكامل */
         if(c.dom.type==='freeze'&&!CH[foe.k].noCE)foe.stun=Math.max(foe.stun,.25);
         if(e.dtk<=0){
           dmgTo(fIdx,c.dom.dmg,1,i);
@@ -666,7 +673,6 @@ function input(){let x=joy.on?joy.x/50:0,y=joy.on?joy.y/50:0;
   if(keys.a||keys.ArrowLeft)x-=1;if(keys.d||keys.ArrowRight)x+=1;if(keys.w||keys.ArrowUp)y-=1;if(keys.s||keys.ArrowDown)y+=1;
   const l=Math.hypot(x,y);if(l>1){x/=l;y/=l}return[x,y]}
 
-/* ===== رسم الحلبة والستيك مان والتأثيرات ===== */
 const X=x=>cx+x*S,Y=y=>cy+y*S;
 
 function drawArena(){
@@ -817,7 +823,6 @@ function draw(t){const dt=Math.min(.033,(t-lt)/1000||0);lt=t;step(dt);
 
     g.font='700 '+(15*S)+'px system-ui';g.textAlign='center';G.pops.forEach(p=>{g.globalAlpha=Math.min(1,p.t*2);g.fillStyle=p.c;g.fillText(p.txt,X(p.x),Y(p.y));g.globalAlpha=1});
     
-    /* شريط الصحة والمجال والألتميت لـ 1v1 أو 2v2 */
     const bw=(W-44)/2;
     const t0=G.p.filter(x=>x.team===0),t1=G.p.filter(x=>x.team===1);
     t0.forEach((e,row)=>{
@@ -856,12 +861,12 @@ const pad=document.getElementById('pad');
 function lp(e){const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]}
 pad.addEventListener('pointerdown',e=>{e.preventDefault();pad.setPointerCapture(e.pointerId);const[x,y]=lp(e);Object.assign(joy,{on:true,id:e.pointerId,ox:x,oy:y,x:0,y:0})});
 pad.addEventListener('pointermove',e=>{if(!joy.on||e.pointerId!==joy.id)return;const[x,y]=lp(e);let dx=x-joy.ox,dy=y-joy.oy;const l=Math.hypot(dx,dy);if(l>50){dx*=50/l;dy*=50/l}joy.x=dx;joy.y=dy});
-['pointerup','pointercancel'].forEach(n=>pad.addEventListener(n,e=>{if(e.pointerId===joy.id)joy.on=false}));
+['pointerup','pointercancel'].forEach(n=>pad.addEventListener(n,e=>{e.pointerId===joy.id&& (joy.on=false)}));
 addEventListener('keydown',e=>{keys[e.key]=true;const m={' ':'dash',f:'m1',1:0,2:1,3:2,q:'bl',e:'rct',r:'dom',u:'ult'}[e.key.toLowerCase()];if(m!==undefined){e.preventDefault();use(0,m)}});
 addEventListener('keyup',e=>keys[e.key]=false);
 try{navigator.serviceWorker&&navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
 rs();menu();requestAnimationFrame(draw);
 </script>
-<script src="mods.js?v=5"></script>
+<script src="mods.js?v=6"></script>
 </body>
 </html>
